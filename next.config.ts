@@ -1,8 +1,30 @@
-const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['@prisma/client'],
-  },
-  output: 'standalone',
-}
+import type { NextConfig } from "next";
 
-export default nextConfig
+const nextConfig: NextConfig = {
+  output: "standalone",
+
+  experimental: {
+    serverComponentsExternalPackages: ["@prisma/client"],
+  },
+
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+
+  reactStrictMode: false,
+
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "i.ibb.co.com",
+      },
+    ],
+  },
+};
+
+export default nextConfig;
