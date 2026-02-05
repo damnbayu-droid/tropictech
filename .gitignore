@@ -47,3 +47,10 @@ test
 prompt
 
 server.log
+
+# local editor settings
+.vscode/
+
+# database backups and local db files
+*.db
+*.db.bak
