@@ -123,20 +123,19 @@ export default function Header() {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-6">
+            <nav className="hidden md:flex items-center space-x-6" aria-label="Main navigation">
               {/* Cart Button with Sheet - Visible to all */}
               {mounted ? (
                 <>
                   <Sheet>
                     <SheetTrigger asChild>
-                      <Button variant="ghost" size="icon" className="relative">
+                      <Button variant="ghost" size="icon" className="relative" aria-label={`View shopping cart with ${itemCount} items`}>
                         <ShoppingCart className="h-5 w-5" />
                         {itemCount > 0 && (
-                          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
+                          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white" aria-hidden="true">
                             {itemCount}
                           </span>
                         )}
-                        <span className="sr-only">Cart</span>
                       </Button>
                     </SheetTrigger>
                     <SheetContent side="right" className="w-[350px] sm:w-[500px] flex flex-col">

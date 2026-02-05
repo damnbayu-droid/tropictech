@@ -26,23 +26,23 @@ export default function Footer() {
           <div className="space-y-4">
             <h4 className="font-semibold">{t('getInTouch')}</h4>
             <div className="space-y-3">
-              <a href="mailto:tropictechindo@gmail.com" className="flex items-center gap-2 text-sm hover:text-primary transition-colors">
+              <a href="mailto:tropictechindo@gmail.com" className="flex items-center gap-2 text-sm hover:text-primary transition-colors" aria-label="Send us an email">
                 <Mail className="h-4 w-4" />
                 tropictechindo@gmail.com
               </a>
-              <a href="https://wa.me/6282266574860" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm hover:text-primary transition-colors">
+              <a href="https://wa.me/6282266574860" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm hover:text-primary transition-colors" aria-label="Chat with us on WhatsApp">
                 <Phone className="h-4 w-4" />
                 +62 82266574860
               </a>
-              <a href="https://maps.app.goo.gl/oaQhpew78fnHjmkB8" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm hover:text-primary transition-colors">
+              <a href="https://maps.app.goo.gl/oaQhpew78fnHjmkB8" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm hover:text-primary transition-colors" aria-label="View our location on Google Maps">
                 <MapPin className="h-4 w-4" />
                 Jl. Tunjungsari No.8, Bali
               </a>
-              <a href="https://www.instagram.com/tropictechs" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm hover:text-primary transition-colors" aria-label="Visit our Instagram">
+              <a href="https://www.instagram.com/tropictechs" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm hover:text-primary transition-colors" aria-label="Follow us on Instagram">
                 <Instagram className="h-4 w-4" />
                 @tropictechs
               </a>
-              <a href="https://tr.ee/4hyKBmebuD" target="_blank" rel="noopener noreferrer" className="text-sm hover:text-primary transition-colors">
+              <a href="https://tr.ee/4hyKBmebuD" target="_blank" rel="noopener noreferrer" className="text-sm hover:text-primary transition-colors" aria-label="Visit our Linktree">
                 Linktree
               </a>
             </div>

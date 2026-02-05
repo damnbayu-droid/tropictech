@@ -19,9 +19,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://tropictechbali.com'),
-  title: "Tropic Tech - Rent Workstation in Bali | 5+ Years Experience",
-  description: "Rent high-quality workstations, desks, monitors, chairs & office equipment in Bali. 5+ years serving digital nomads & remote workers. Fast delivery & flexible terms. Daily, weekly & monthly rates available.",
-  keywords: ["Tropic Tech", "Bali", "Workstation", "Rental", "Digital Nomads", "Remote Work", "Office Equipment", "Desks", "Monitors", "Chairs", "Bali Rentals", "Coworking", "Office Furniture Rental", "Computer Rental Bali", "Workstation Rental Bali", "Laptop Stand Rental", "Ergonomic Chair Rental", "Monitor Rental Bali"],
+  title: "Tropic Tech | #1 Workstation & Office Rental Bali",
+  description: "Rent premium workstations, ergonomic chairs, monitors, and desks in Bali. 5+ years experience serving digital nomads and remote workers. Daily, weekly, and monthly rentals with fast island-wide delivery.",
+  keywords: ["Workstation Rental Bali", "Rent Office Chair Bali", "Monitor Rental Bali", "Tropic Tech Bali", "Canggu Coworking Equipment", "Ubud Desktop Rental", "Remote Work Bali", "Desk Rental Bali", "Digital Nomad Bali", "Ergonomic office equipment rental Indonesia"],
   authors: [{ name: "PT Tropic Tech International" }],
   creator: "Tropic Tech",
   publisher: "PT Tropic Tech International",

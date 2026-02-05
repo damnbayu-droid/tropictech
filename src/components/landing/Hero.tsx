@@ -51,10 +51,10 @@ export default function Hero() {
       </div>
 
       <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-        <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+        <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent leading-tight">
           {t('title')}
         </h1>
-        <p className="text-xl md:text-2xl mb-4 text-muted-foreground">
+        <p className="text-xl md:text-2xl mb-4 text-muted-foreground font-medium">
           {t('subtitle')}
         </p>
         <p className="text-lg md:text-xl mb-8 text-muted-foreground">
@@ -65,7 +65,7 @@ export default function Hero() {
             size="lg"
             className="text-lg px-8 py-5 h-auto font-bold shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all rounded-full"
             onClick={scrollToProducts}
-            aria-label={t('rentNow')}
+            aria-label="Scroll to workstation rentals"
           >
             {t('rentNow')}
           </Button>
