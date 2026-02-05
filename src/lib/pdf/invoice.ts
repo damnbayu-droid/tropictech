@@ -20,6 +20,7 @@ export interface InvoiceData {
   orderNumber: string
   startDate: string
   endDate: string
+  isRegistered?: boolean
 }
 
 export function generateInvoicePDF(data: InvoiceData): jsPDF {
@@ -29,8 +30,8 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   let y = 20
 
   // Colors
-  const primaryColor = [102, 102, 255] // Primary color
-  const grayColor = [128, 128, 128]
+  const primaryColor: [number, number, number] = [102, 102, 255] // Primary color
+  const grayColor: [number, number, number] = [128, 128, 128]
 
   // Header - Company Name
   doc.setFontSize(24)
@@ -182,9 +183,52 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   doc.text(`${data.currency} ${data.total.toLocaleString()}`, pageWidth - 30, y)
   y += 20
 
-  // Footer - Payment Info
-  y = pageHeight - 50
+  // Confirmation Section
+  y = pageHeight - 100
+  doc.setDrawColor(220, 220, 220)
+  doc.line(20, y, pageWidth - 20, y)
+  y += 10
 
+  if (data.isRegistered) {
+    // Barcode Placeholder for Registered Users
+    doc.setFont('helvetica', 'bold')
+    doc.text('CONFIRMATION BARCODE', 20, y)
+    y += 5
+    doc.setFillColor(0, 0, 0)
+    // Draw a simple barcode representation
+    for (let i = 0; i < 40; i++) {
+      const width = Math.random() > 0.5 ? 1 : 0.5
+      doc.rect(20 + i * 2, y, width, 15, 'F')
+    }
+    y += 20
+    doc.setFontSize(8)
+    doc.text(`USER_VERIFIED_ID: ${data.customerName.toUpperCase().replace(/\s/g, '_')}_${Date.now()}`, 20, y)
+  } else {
+    // Company Confirmation for Guest
+    doc.setFont('helvetica', 'bold')
+    doc.text('RENTAL CONFIRMATION', 20, y)
+    y += 8
+    doc.setFont('helvetica', 'italic')
+    doc.setFontSize(9)
+    doc.text('Confirmed Rented From Company:', 20, y)
+    y += 5
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(11)
+    doc.setTextColor(...primaryColor)
+    doc.text('PT TROPIC TECH INTERNATIONAL', 20, y)
+
+    // Simple "Stamp" representation
+    doc.setDrawColor(...primaryColor)
+    doc.setLineWidth(1)
+    doc.circle(pageWidth - 50, y, 15, 'S')
+    doc.setFontSize(8)
+    doc.text('OFFICIAL', pageWidth - 50, y - 2, { align: 'center' })
+    doc.text('STAMP', pageWidth - 50, y + 4, { align: 'center' })
+  }
+
+  // Footer - Payment Info
+  y = pageHeight - 55
+  doc.setTextColor(0, 0, 0)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(11)
   doc.setTextColor(...primaryColor)

@@ -1,0 +1,151 @@
+"use client"
+
+import {
+    LayoutDashboard,
+    Users,
+    Package,
+    Box,
+    Warehouse,
+    ShoppingCart,
+    FileText,
+    BarChart3,
+    Settings,
+    LogOut,
+    Home
+} from "lucide-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarRail,
+} from "@/components/ui/sidebar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+
+// Menu items.
+const items = [
+    {
+        title: "Overview",
+        url: "/admin/overview",
+        icon: LayoutDashboard,
+    },
+    {
+        title: "User Management",
+        url: "/admin/users",
+        icon: Users,
+    },
+    {
+        title: "Products",
+        url: "/admin/products",
+        icon: Box,
+    },
+    {
+        title: "Packages",
+        url: "/admin/packages",
+        icon: Package,
+    },
+    {
+        title: "Inventory (Units)",
+        url: "/admin/inventory",
+        icon: Warehouse,
+    },
+    {
+        title: "Orders / Rentals",
+        url: "/admin/orders",
+        icon: ShoppingCart,
+    },
+    {
+        title: "Invoices",
+        url: "/admin/invoices",
+        icon: FileText,
+    },
+    {
+        title: "Reports",
+        url: "/admin/reports",
+        icon: BarChart3,
+    },
+    {
+        title: "System Control",
+        url: "/admin/system",
+        icon: Settings,
+    },
+]
+
+export function AdminSidebar() {
+    const pathname = usePathname()
+
+    return (
+        <Sidebar collapsible="icon">
+            <SidebarHeader className="h-16 border-b border-sidebar-border flex items-center justify-center">
+                <div className="flex items-center gap-2 font-bold text-xl px-4 w-full">
+                    <span className="text-primary truncate">Tropic Tech Admin</span>
+                </div>
+            </SidebarHeader>
+            <SidebarContent>
+                <SidebarGroup>
+                    <SidebarGroupLabel>Menu</SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            {items.map((item) => (
+                                <SidebarMenuItem key={item.title}>
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={pathname.startsWith(item.url)}
+                                        tooltip={item.title}
+                                    >
+                                        <Link href={item.url}>
+                                            <item.icon />
+                                            <span>{item.title}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            ))}
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+                <SidebarGroup>
+                    <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton asChild tooltip="Back to Home">
+                                    <Link href="/">
+                                        <Home className="text-primary font-bold" />
+                                        <span className="font-bold">BACK TO HOME</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+            </SidebarContent>
+            <SidebarFooter>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton size="lg" asChild>
+                            <div className="flex items-center gap-2">
+                                <Avatar className="h-8 w-8 rounded-lg">
+                                    <AvatarFallback className="rounded-lg">AD</AvatarFallback>
+                                </Avatar>
+                                <div className="grid flex-1 text-left text-sm leading-tight">
+                                    <span className="truncate font-semibold">Admin User</span>
+                                    <span className="truncate text-xs">admin@tropictech.com</span>
+                                </div>
+                            </div>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarFooter>
+            <SidebarRail />
+        </Sidebar>
+    )
+}

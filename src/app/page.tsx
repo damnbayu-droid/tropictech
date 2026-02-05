@@ -4,13 +4,15 @@ import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import Header from '@/components/header/Header'
 import Hero from '@/components/landing/Hero'
-import Products from '@/components/landing/Products'
-import Packages from '@/components/landing/Packages'
-import Services from '@/components/landing/Services'
-import FAQ from '@/components/landing/FAQ'
-import AboutUs from '@/components/landing/AboutUs'
-import Reviews from '@/components/landing/Reviews'
-import Footer from '@/components/landing/Footer'
+
+// Dynamically import below-the-fold components
+const Products = dynamic(() => import('@/components/landing/Products'))
+const Packages = dynamic(() => import('@/components/landing/Packages'))
+const Services = dynamic(() => import('@/components/landing/Services'))
+const FAQ = dynamic(() => import('@/components/landing/FAQ'), { ssr: false })
+const AboutUs = dynamic(() => import('@/components/landing/AboutUs'))
+const Reviews = dynamic(() => import('@/components/landing/Reviews'))
+const Footer = dynamic(() => import('@/components/landing/Footer'))
 
 // Dynamically import OrderPopup to avoid hydration issues with useAuth
 const OrderPopup = dynamic(() => import('@/components/landing/OrderPopup'), {

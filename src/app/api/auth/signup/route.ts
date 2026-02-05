@@ -9,14 +9,14 @@ export async function POST(request: NextRequest) {
       fullName,
       email,
       whatsapp,
+      password,
       baliAddress,
       mapsAddressLink,
-      passportPhoto,
     } = body
 
-    if (!fullName || !email || !whatsapp) {
+    if (!fullName || !email || !whatsapp || !password) {
       return NextResponse.json(
-        { error: 'Full name, email, and WhatsApp are required' },
+        { error: 'Full name, email, WhatsApp, and password are required' },
         { status: 400 }
       )
     }
@@ -37,9 +37,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate username and password
+    // Generate username and hash password
     const username = generateUsername(fullName)
-    const password = generatePassword()
+    // const password = generatePassword() // REMOVED: Using user provided password
     const hashedPassword = await hashPassword(password)
 
     // Create user
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
         whatsapp,
         baliAddress,
         mapsAddressLink,
-        passportPhoto,
+        // passportPhoto, // REMOVED
         role: 'USER',
       },
     })
@@ -74,10 +74,7 @@ export async function POST(request: NextRequest) {
         fullName: user.fullName,
         role: user.role,
       },
-      credentials: {
-        username,
-        password,
-      },
+      // credentials: { username, password }, // REMOVED: User knows their password. Username is returned in user obj.
     })
   } catch (error) {
     console.error('Signup error:', error)

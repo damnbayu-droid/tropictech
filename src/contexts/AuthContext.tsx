@@ -8,6 +8,8 @@ interface User {
   email: string
   fullName: string
   role: 'USER' | 'WORKER' | 'ADMIN'
+  whatsapp?: string
+  baliAddress?: string
 }
 
 interface AuthContextType {

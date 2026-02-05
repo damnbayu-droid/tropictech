@@ -4,6 +4,11 @@ import Image from 'next/image'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { useCart } from '@/contexts/CartContext'
+import { ShoppingCart, Share2 } from 'lucide-react'
+import { useState } from 'react'
+import { cn } from '@/lib/utils'
+import { ProductDetailModal } from './ProductDetailModal'
 
 interface PackageCardProps {
   package: {
@@ -13,6 +18,8 @@ interface PackageCardProps {
     price: number
     duration: number
     imageUrl?: string | null
+    images?: string[]
+    specs?: any
     items: Array<{
       id: string
       quantity: number
@@ -26,62 +33,129 @@ interface PackageCardProps {
 
 export default function PackageCard({ package: pkg, onOrder }: PackageCardProps) {
   const { t } = useLanguage()
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleShare = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (navigator.share) {
+      navigator.share({
+        title: pkg.name,
+        text: pkg.description,
+        url: window.location.href,
+      }).catch(console.error)
+    } else {
+      navigator.clipboard.writeText(window.location.href)
+      // simplified toast
+    }
+  }
 
   return (
-    <Card className="flex flex-col h-full overflow-hidden hover:shadow-lg transition-shadow">
-      <CardHeader className="pb-3">
-        {pkg.imageUrl ? (
-          <div className="relative aspect-video w-full mb-3 rounded-lg overflow-hidden bg-muted">
-            <Image
-              src={pkg.imageUrl}
-              alt={pkg.name}
-              fill
-              className="object-cover"
-            />
-          </div>
-        ) : (
-          <div className="aspect-video w-full mb-3 rounded-lg bg-muted flex items-center justify-center">
-            <span className="text-4xl">📦</span>
-          </div>
-        )}
-        <CardTitle className="line-clamp-1">{pkg.name}</CardTitle>
-        <CardDescription className="line-clamp-2">{pkg.description}</CardDescription>
-      </CardHeader>
-
-      <CardContent className="flex-1">
-        <div className="space-y-3">
-          <div>
-            <p className="text-sm font-medium mb-2">Included Items:</p>
-            <ul className="space-y-1 text-sm text-muted-foreground">
-              {pkg.items.map((item) => (
-                <li key={item.id} className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0" />
-                  <span className="line-clamp-1">
-                    {item.product.name} x {item.quantity}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="border-t pt-3 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{t('rentalDuration')}:</span>
-              <span className="font-semibold">{pkg.duration} days</span>
+    <>
+      <Card
+        className="flex flex-col h-full overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+        onClick={() => setIsModalOpen(true)}
+      >
+        <CardHeader className="pb-3">
+          {pkg.imageUrl ? (
+            <div className="relative aspect-video w-full mb-3 rounded-lg overflow-hidden bg-muted">
+              <Image
+                src={pkg.imageUrl}
+                alt={pkg.name}
+                fill
+                className="object-cover hover:scale-105 transition-transform duration-300"
+              />
             </div>
-            <div className="flex justify-between font-semibold">
-              <span>{t('totalPrice')}:</span>
-              <span className="text-primary">Rp {pkg.price.toLocaleString('id-ID')}</span>
+          ) : (
+            <div className="aspect-video w-full mb-3 rounded-lg bg-muted flex items-center justify-center">
+              <span className="text-4xl">📦</span>
+            </div>
+          )}
+          <CardTitle className="line-clamp-1">{pkg.name}</CardTitle>
+          <CardDescription className="line-clamp-2">{pkg.description}</CardDescription>
+        </CardHeader>
+
+        <CardContent className="flex-1">
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm font-medium mb-2">Included Items:</p>
+              <ul className="space-y-1 text-sm text-muted-foreground">
+                {pkg.items.map((item) => (
+                  <li key={item.id} className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0" />
+                    <span className="line-clamp-1">
+                      {item.product.name} x {item.quantity}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="border-t pt-3 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{t('rentalDuration')}:</span>
+                <span className="font-semibold">{pkg.duration} days</span>
+              </div>
+              <div className="flex justify-between font-semibold">
+                <span>{t('totalPrice')}:</span>
+                <span className="text-primary">Rp {pkg.price.toLocaleString('id-ID')}</span>
+              </div>
             </div>
           </div>
-        </div>
-      </CardContent>
+        </CardContent>
 
-      <CardFooter>
-        <Button className="w-full" onClick={() => onOrder(pkg.id)}>
-          {t('order')}
-        </Button>
-      </CardFooter>
-    </Card>
+        <CardFooter className="gap-2" onClick={(e) => e.stopPropagation()}>
+          <Button className="flex-1" onClick={() => onOrder(pkg.id)}>
+            {t('order')}
+          </Button>
+          <AddToCartButton
+            item={{
+              id: pkg.id,
+              type: 'PACKAGE',
+              name: pkg.name,
+              price: pkg.price,
+              duration: pkg.duration,
+              image: pkg.imageUrl,
+              quantity: 1
+            }}
+          />
+          <Button variant="outline" size="icon" onClick={handleShare} title="Share">
+            <Share2 className="h-4 w-4" />
+          </Button>
+        </CardFooter>
+      </Card>
+
+      <ProductDetailModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        product={pkg}
+      />
+    </>
+  )
+}
+
+function AddToCartButton({ item }: { item: any }) {
+  const { addItem } = useCart()
+  const [isAdded, setIsAdded] = useState(false)
+
+  const handleAdd = () => {
+    addItem(item)
+    setIsAdded(true)
+    setTimeout(() => setIsAdded(false), 2000)
+  }
+
+  return (
+    <Button
+      variant={isAdded ? "default" : "outline"}
+      size="icon"
+      onClick={handleAdd}
+      className={cn("transition-colors", isAdded && "bg-green-600 hover:bg-green-700 text-white")}
+      title="Add to Cart"
+    >
+      {isAdded ? (
+        <span className="text-xs font-bold">Added</span>
+      ) : (
+        <ShoppingCart className="h-4 w-4" />
+      )}
+    </Button>
   )
 }

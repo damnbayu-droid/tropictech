@@ -1,0 +1,21 @@
+examples/websocket/frontend.tsx(4,20): error TS2307: Cannot find module 'socket.io-client' or its corresponding type declarations.
+examples/websocket/server.ts(2,24): error TS2307: Cannot find module 'socket.io' or its corresponding type declarations.
+skills/frontend-design/examples/typescript/sample-components.tsx(107,11): error TS2430: Interface 'InputProps' incorrectly extends interface 'InputHTMLAttributes<HTMLInputElement>'.
+  Types of property 'size' are incompatible.
+    Type '"lg" | "md" | "sm" | undefined' is not assignable to type 'number | undefined'.
+      Type 'string' is not assignable to type 'number'.
+skills/frontend-design/examples/typescript/theme-provider.tsx(237,54): error TS2503: Cannot find namespace 'JSX'.
+src/app/dashboard/user/page.tsx(236,67): error TS2339: Property 'whatsapp' does not exist on type 'User'.
+src/app/dashboard/user/page.tsx(238,20): error TS2339: Property 'baliAddress' does not exist on type 'User'.
+src/app/dashboard/user/page.tsx(241,69): error TS2339: Property 'baliAddress' does not exist on type 'User'.
+src/components/landing/OrderPopup.tsx(98,19): error TS2339: Property 'guestInfo' does not exist on type '{ item: { type: "PRODUCT" | "PACKAGE"; id: string; name: string; price: number; duration?: number | undefined; }; currency: string; paymentMethod: string; deliveryAddress: string; notes: string; }'.
+src/lib/auth/utils.ts(27,22): error TS2345: Argument of type 'import("/Users/bayu/Documents/ANTIGRAVITY/TropicTechAntigravity/src/lib/auth/utils").JWTPayload' is not assignable to parameter of type 'import("/Users/bayu/Documents/ANTIGRAVITY/TropicTechAntigravity/node_modules/jose/dist/types/types").JWTPayload'.
+  Index signature for type 'string' is missing in type 'JWTPayload'.
+src/lib/db.ts(1,10): error TS2305: Module '"@prisma/client"' has no exported member 'PrismaClient'.
+src/lib/pdf/invoice.ts(37,20): error TS2556: A spread argument must either have a tuple type or be passed to a rest parameter.
+src/lib/pdf/invoice.ts(48,20): error TS2556: A spread argument must either have a tuple type or be passed to a rest parameter.
+src/lib/pdf/invoice.ts(60,20): error TS2556: A spread argument must either have a tuple type or be passed to a rest parameter.
+src/lib/pdf/invoice.ts(114,20): error TS2556: A spread argument must either have a tuple type or be passed to a rest parameter.
+src/lib/pdf/invoice.ts(161,20): error TS2556: A spread argument must either have a tuple type or be passed to a rest parameter.
+src/lib/pdf/invoice.ts(190,20): error TS2556: A spread argument must either have a tuple type or be passed to a rest parameter.
+src/lib/pdf/invoice.ts(217,20): error TS2556: A spread argument must either have a tuple type or be passed to a rest parameter.

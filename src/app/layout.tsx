@@ -3,7 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { CartProvider } from "@/contexts/CartContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,7 +19,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://tropictechbali.com'),
-  title: "Tropic Tech - Workstation Rental in Bali | 5+ Years Experience",
+  title: "Tropic Tech - Rent Workstation in Bali | 5+ Years Experience",
   description: "Rent high-quality workstations, desks, monitors, chairs & office equipment in Bali. 5+ years serving digital nomads & remote workers. Fast delivery & flexible terms. Daily, weekly & monthly rates available.",
   keywords: ["Tropic Tech", "Bali", "Workstation", "Rental", "Digital Nomads", "Remote Work", "Office Equipment", "Desks", "Monitors", "Chairs", "Bali Rentals", "Coworking", "Office Furniture Rental", "Computer Rental Bali", "Workstation Rental Bali", "Laptop Stand Rental", "Ergonomic Chair Rental", "Monitor Rental Bali"],
   authors: [{ name: "PT Tropic Tech International" }],
@@ -32,7 +34,7 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Tropic Tech - Workstation Rental in Bali",
+    title: "Tropic Tech - Rent Workstation in Bali",
     description: "Professional workstation rental in Bali. 5+ years experience serving digital nomads and remote workers with fast delivery.",
     url: "https://tropictechbali.com",
     siteName: "Tropic Tech",
@@ -79,14 +81,27 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://i.ibb.co.com" />
+        <link rel="dns-prefetch" href="https://i.ibb.co.com" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        <LanguageProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </LanguageProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <LanguageProvider>
+            <AuthProvider>
+              <CartProvider>
+                {children}
+              </CartProvider>
+            </AuthProvider>
+          </LanguageProvider>
+        </ThemeProvider>
         <Toaster />
       </body>
     </html>

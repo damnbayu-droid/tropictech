@@ -4,16 +4,14 @@ import { useState, useEffect } from 'react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import ProductCard from './ProductCard'
 import { Button } from '@/components/ui/button'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-
-const categories = [
-  'All',
-  'Desks',
-  'Monitors',
-  'Chairs',
-  'Keyboard & Mouse',
-  'Accessories',
-]
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi
+} from '@/components/ui/carousel'
 
 export default function Products({
   onOrder,
@@ -23,46 +21,41 @@ export default function Products({
   const { t } = useLanguage()
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [products, setProducts] = useState<any[]>([])
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [itemsPerView, setItemsPerView] = useState(4)
-  const [isMobile, setIsMobile] = useState(false)
-
-  useEffect(() => {
-    const handleResize = () => {
-      const width = window.innerWidth
-      setIsMobile(width < 768)
-      setItemsPerView(width < 1024 ? 2 : 4)
-    }
-
-    handleResize()
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  const [categories, setCategories] = useState<string[]>(['All'])
+  const [api, setApi] = useState<CarouselApi>()
 
   useEffect(() => {
     fetchProducts()
-  }, [selectedCategory])
+  }, [])
+
+  useEffect(() => {
+    if (api) {
+      api.scrollTo(0)
+    }
+  }, [selectedCategory, api])
 
   const fetchProducts = async () => {
     try {
       const res = await fetch('/api/products')
       if (res.ok) {
         const data = await res.json()
-        let filtered = data.products
-        if (selectedCategory !== 'All') {
-          filtered = filtered.filter(
-            (p: any) => p.category === selectedCategory
-          )
-        }
-        setProducts(filtered)
-        setCurrentIndex(0)
+        const fetchedProducts = data.products
+        setProducts(fetchedProducts)
+
+        // Extract unique categories from actual products
+        const uniqueCategories = Array.from(
+          new Set(fetchedProducts.map((p: any) => p.category))
+        ) as string[]
+        setCategories(['All', ...uniqueCategories.sort()])
       }
     } catch (err) {
       console.error(err)
     }
   }
 
-  const maxIndex = Math.max(0, products.length - itemsPerView)
+  const filteredProducts = selectedCategory === 'All'
+    ? products
+    : products.filter(p => p.category === selectedCategory)
 
   return (
     <section id="products" className="py-16 bg-muted/30">
@@ -78,77 +71,38 @@ export default function Products({
               key={cat}
               variant={selectedCategory === cat ? 'default' : 'outline'}
               onClick={() => setSelectedCategory(cat)}
-              className="rounded-full"
+              className="rounded-full capitalize"
             >
               {cat}
             </Button>
           ))}
         </div>
 
-        {/* MOBILE VIEW */}
-        {isMobile ? (
-          <div className="space-y-6">
-            {products.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onOrder={onOrder}
-              />
+        <Carousel
+          setApi={setApi}
+          opts={{
+            align: "start",
+            loop: false, // Changed to false for better UX when filtering
+          }}
+          className="w-full"
+        >
+          <CarouselContent className="-ml-2 md:-ml-4">
+            {filteredProducts.map((product) => (
+              <CarouselItem key={product.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/4">
+                <div className="p-1">
+                  <ProductCard
+                    product={product}
+                    onOrder={onOrder}
+                  />
+                </div>
+              </CarouselItem>
             ))}
+          </CarouselContent>
+          <div className="hidden md:block">
+            <CarouselPrevious className="-left-12" />
+            <CarouselNext className="-right-12" />
           </div>
-        ) : (
-          /* DESKTOP / TABLET SLIDER */
-          <div className="relative">
-            <div className="overflow-hidden">
-              <div
-                className="flex gap-4 transition-transform duration-300"
-                style={{
-                  transform: `translateX(-${currentIndex * (100 / itemsPerView)}%)`,
-                  width: `${products.length * (100 / itemsPerView)}%`,
-                }}
-              >
-                {products.map((product) => (
-                  <div key={product.id} className="w-1/4 px-2">
-                    <ProductCard
-                      product={product}
-                      onOrder={onOrder}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {products.length > itemsPerView && (
-              <>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 bg-background shadow"
-                  onClick={() =>
-                    setCurrentIndex((i) => Math.max(i - itemsPerView, 0))
-                  }
-                  disabled={currentIndex === 0}
-                >
-                  <ChevronLeft />
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 bg-background shadow"
-                  onClick={() =>
-                    setCurrentIndex((i) =>
-                      Math.min(i + itemsPerView, maxIndex)
-                    )
-                  }
-                  disabled={currentIndex >= maxIndex}
-                >
-                  <ChevronRight />
-                </Button>
-              </>
-            )}
-          </div>
-        )}
+        </Carousel>
       </div>
     </section>
   )

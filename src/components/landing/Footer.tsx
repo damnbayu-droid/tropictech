@@ -38,7 +38,7 @@ export default function Footer() {
                 <MapPin className="h-4 w-4" />
                 Jl. Tunjungsari No.8, Bali
               </a>
-              <a href="https://www.instagram.com/tropictechs" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm hover:text-primary transition-colors">
+              <a href="https://www.instagram.com/tropictechs" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm hover:text-primary transition-colors" aria-label="Visit our Instagram">
                 <Instagram className="h-4 w-4" />
                 @tropictechs
               </a>

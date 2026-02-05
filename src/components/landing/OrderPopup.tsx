@@ -80,14 +80,6 @@ export default function OrderPopup({ isOpen, onClose, item }: OrderPopupProps) {
     try {
       setIsSubmitting(true)
 
-      const orderData = {
-        item,
-        currency,
-        paymentMethod,
-        deliveryAddress,
-        notes,
-      }
-
       if (!user) {
         // Guest order - validate guest info
         if (!guestInfo.name || !guestInfo.email || !guestInfo.whatsapp) {
@@ -95,7 +87,15 @@ export default function OrderPopup({ isOpen, onClose, item }: OrderPopupProps) {
           setIsSubmitting(false)
           return
         }
-        orderData.guestInfo = guestInfo
+      }
+
+      const orderData = {
+        item,
+        currency,
+        paymentMethod,
+        deliveryAddress,
+        notes,
+        guestInfo: user ? undefined : guestInfo,
       }
 
       if (paymentMethod === 'WHATSAPP') {

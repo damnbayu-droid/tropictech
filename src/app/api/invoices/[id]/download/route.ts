@@ -25,7 +25,12 @@ export async function GET(
       include: {
         order: {
           include: {
-            rentalItems: true,
+            rentalItems: {
+              include: {
+                product: true,
+                rentalPackage: true,
+              }
+            },
           },
         },
         user: true,
@@ -44,34 +49,40 @@ export async function GET(
     // Generate PDF
     const pdf = generateInvoicePDF({
       invoiceNumber: invoice.invoiceNumber,
-      invoiceDate: new Date(invoice.createdAt).toLocaleDateString(),
-      customerName: invoice.user?.fullName || invoice.order.guestName || 'Guest',
-      customerEmail: invoice.user?.email || invoice.order.guestEmail || '',
-      customerWhatsApp: invoice.user?.whatsapp || invoice.order.guestWhatsapp,
-      customerAddress: invoice.order.deliveryAddress || undefined,
-      items: invoice.order.rentalItems.map((item) => ({
-        name: item.name,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        totalPrice: item.totalPrice,
-      })),
-      subtotal: invoice.subtotal,
-      tax: invoice.tax,
-      total: invoice.total,
-      currency: invoice.currency,
-      orderNumber: invoice.order.orderNumber,
-      startDate: new Date(invoice.order.startDate).toLocaleDateString(),
-      endDate: new Date(invoice.order.endDate).toLocaleDateString(),
+      invoiceDate: (invoice.createdAt || new Date()).toLocaleDateString(),
+      customerName: invoice.user?.fullName || 'Guest',
+      customerEmail: invoice.user?.email || '',
+      customerWhatsApp: invoice.user?.whatsapp,
+      items: (invoice.order?.rentalItems || []).map((item) => {
+        const name = item.product?.name || item.rentalPackage?.name || 'Item';
+        const price = Number(item.product?.monthlyPrice || item.rentalPackage?.price || 0);
+        const quantity = item.quantity || 0;
+        return {
+          name,
+          quantity,
+          unitPrice: price,
+          totalPrice: price * quantity,
+        };
+      }),
+      subtotal: Number(invoice.subtotal),
+      tax: Number(invoice.tax),
+      total: Number(invoice.total),
+      currency: invoice.currency || 'IDR',
+      orderNumber: invoice.order?.orderNumber || '',
+      startDate: (invoice.order?.startDate || new Date()).toLocaleDateString(),
+      endDate: (invoice.order?.endDate || new Date()).toLocaleDateString(),
     })
 
     // Generate PDF buffer
     const pdfBuffer = Buffer.from(pdf.output('arraybuffer'))
 
-    // Update invoice with PDF URL (in real app, upload to storage)
+    // Note: pdfUrl is not in schema, skipping update
+    /*
     await db.invoice.update({
       where: { id: params.id },
       data: { pdfUrl: `/api/invoices/${params.id}/download` },
     })
+    */
 
     return new NextResponse(pdfBuffer, {
       headers: {

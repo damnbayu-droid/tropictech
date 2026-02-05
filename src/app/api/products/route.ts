@@ -1,25 +1,33 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '../../../lib/supabase'
+import { db } from '@/lib/db'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const category = searchParams.get('category')
 
-  let query = supabase
-    .from('products')
-    .select('*')
-    .order('created_at', { ascending: false })
+  try {
+    const products = await db.product.findMany({
+      where: category ? { category } : undefined,
+      orderBy: { createdAt: 'desc' },
+    })
 
-  if (category) {
-    query = query.eq('category', category)
+    return NextResponse.json({ products })
+  } catch (error) {
+    console.error('Error fetching products:', error)
+    return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 })
   }
+}
 
-  const { data, error } = await query
-
-  if (error) {
-    console.error('Supabase error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+export async function POST(request: Request) {
+  try {
+    const json = await request.json()
+    // Basic validation could go here
+    const product = await db.product.create({
+      data: json,
+    })
+    return NextResponse.json({ product }, { status: 201 })
+  } catch (error) {
+    console.error('Error creating product:', error)
+    return NextResponse.json({ error: 'Failed to create product' }, { status: 500 })
   }
-
-  return NextResponse.json({ products: data ?? [] })
 }

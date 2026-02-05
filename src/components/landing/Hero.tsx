@@ -1,14 +1,33 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import Image from 'next/image'
+import { cn } from '@/lib/utils'
 
 export default function Hero() {
   const { t } = useLanguage()
-  const [imageOpacity, setImageOpacity] = useState(30)
+  const [imageOpacity, setImageOpacity] = useState(0)
+  const [sliderOpacity, setSliderOpacity] = useState(0)
+
+  useEffect(() => {
+    // Animate opacity from 0 to 100 over 3 seconds on mount
+    const timer = setTimeout(() => {
+      setImageOpacity(50)
+    }, 100)
+
+    // Slider appears after 3 seconds, taking 3 seconds to fade in
+    const sliderTimer = setTimeout(() => {
+      setSliderOpacity(100)
+    }, 3000)
+
+    return () => {
+      clearTimeout(timer)
+      clearTimeout(sliderTimer)
+    }
+  }, [])
 
   const scrollToProducts = () => {
     document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })
@@ -18,12 +37,13 @@ export default function Hero() {
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary/10 via-background to-primary/5">
       <div className="absolute inset-0">
         <Image
-          src="https://i.ibb.co.com/Pzbsg8mx/2.jpg"
+          src="/images/hero.webp"
           alt="Tropic Tech Workstation Rental Bali"
           fill
-          className="object-cover"
+          className="object-cover transition-opacity duration-[3000ms] ease-in-out"
           style={{ opacity: imageOpacity / 100 }}
           priority
+          fetchPriority="high"
           sizes="100vw"
           quality={85}
         />
@@ -40,17 +60,52 @@ export default function Hero() {
         <p className="text-lg md:text-xl mb-8 text-muted-foreground">
           {t('subtitle2')}
         </p>
-        <Button
-          size="lg"
-          className="text-lg px-8 py-6"
-          onClick={scrollToProducts}
-        >
-          {t('rentNow')}
-        </Button>
+        <div className="flex flex-col items-center gap-4">
+          <Button
+            size="lg"
+            className="text-lg px-8 py-5 h-auto font-bold shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all rounded-full"
+            onClick={scrollToProducts}
+            aria-label={t('rentNow')}
+          >
+            {t('rentNow')}
+          </Button>
+
+          <div className="flex flex-wrap justify-center gap-3 mt-4 opacity-60 hover:opacity-100 transition-opacity">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full px-6 border-primary/20 bg-primary/5 hover:bg-primary hover:text-white transition-all font-bold"
+              onClick={() => window.location.href = '/admin/overview'}
+            >
+              ADMIN
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full px-6 border-orange-500/20 bg-orange-500/5 hover:bg-orange-500 hover:text-white transition-all font-bold"
+              onClick={() => window.location.href = '/dashboard/worker'}
+            >
+              WORKER
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full px-6 border-blue-500/20 bg-blue-500/5 hover:bg-blue-500 hover:text-white transition-all font-bold"
+              onClick={() => window.location.href = '/dashboard/user'}
+            >
+              USER
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Opacity Control Slider - Like volume control on edge */}
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 bg-background/90 backdrop-blur-sm p-3 rounded-full shadow-lg border">
+      <div
+        className={cn(
+          "absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 bg-background/10 backdrop-blur-md p-3 rounded-full shadow-lg border border-white/20 transition-opacity duration-[3000ms] ease-in-out",
+          sliderOpacity === 0 ? "opacity-0 pointer-events-none" : "opacity-100"
+        )}
+      >
         <div className="h-40 flex items-center">
           <Slider
             value={[imageOpacity]}
@@ -60,6 +115,7 @@ export default function Hero() {
             step={5}
             orientation="vertical"
             className="w-2"
+            aria-label="Background image opacity"
           />
         </div>
         <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
@@ -73,6 +129,6 @@ export default function Hero() {
           <div className="w-1.5 h-3 bg-primary rounded-full mt-2 animate-pulse" />
         </div>
       </div>
-    </section>
+    </section >
   )
 }

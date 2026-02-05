@@ -1,46 +1,66 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '../../../lib/supabase'
+import { db } from '@/lib/db'
 
 export async function GET() {
-  const { data, error } = await supabase
-    .from('packages')
-    .select(`
-      id,
-      name,
-      description,
-      image_url,
-      price,
-      duration,
-      package_items (
-        id,
-        quantity,
-        products (
-          name
-        )
-      )
-    `)
-    .order('created_at', { ascending: false })
+  try {
+    const packages = await db.rentalPackage.findMany({
+      include: {
+        rentalPackageItems: {
+          include: {
+            product: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+    })
 
-  if (error) {
-    console.error('Supabase error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  const formatted = data?.map(pkg => ({
-    id: pkg.id,
-    name: pkg.name,
-    description: pkg.description,
-    imageUrl: pkg.image_url,
-    price: pkg.price,
-    duration: pkg.duration,
-    items: pkg.package_items.map((item: any) => ({
-      id: item.id,
-      quantity: item.quantity,
-      product: {
-        name: item.products?.name ?? ''
-      }
+    const formatted = packages.map(pkg => ({
+      id: pkg.id,
+      name: pkg.name,
+      description: pkg.description,
+      imageUrl: pkg.imageUrl,
+      price: Number(pkg.price), // Decimal to number
+      duration: pkg.duration,
+      items: pkg.rentalPackageItems.map(item => ({
+        id: item.id,
+        quantity: item.quantity,
+        product: {
+          name: item.product.name
+        }
+      }))
     }))
-  }))
 
-  return NextResponse.json({ packages: formatted ?? [] })
+    return NextResponse.json({ packages: formatted })
+  } catch (error) {
+    console.error('Error fetching packages FULL:', error)
+    return NextResponse.json({ error: 'Failed to fetch packages', details: String(error) }, { status: 500 })
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const json = await request.json()
+    const { items, ...packageData } = json
+
+    // Prepare Prisma data
+    const data: any = { ...packageData }
+
+    // Handle items if present
+    if (items && Array.isArray(items)) {
+      data.rentalPackageItems = {
+        create: items.map((item: any) => ({
+          productId: item.productId,
+          quantity: item.quantity || 1
+        }))
+      }
+    }
+
+    const pkg = await db.rentalPackage.create({
+      data: data,
+    })
+    return NextResponse.json({ package: pkg }, { status: 201 })
+  } catch (error) {
+    console.error('Error creating package:', error)
+    return NextResponse.json({ error: 'Failed to create package' }, { status: 500 })
+  }
 }

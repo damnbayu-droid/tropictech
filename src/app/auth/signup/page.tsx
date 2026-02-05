@@ -10,50 +10,64 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { X, Eye, EyeOff } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
+  const [password, setPassword] = useState('')
   const [baliAddress, setBaliAddress] = useState('')
   const [mapsAddressLink, setMapsAddressLink] = useState('')
-  const [passportPhoto, setPassportPhoto] = useState<File | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [agreedToPolicy, setAgreedToPolicy] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+
   const router = useRouter()
   const { t } = useLanguage()
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setPassportPhoto(file)
-    }
+  // Simple password strength calculation
+  const getPasswordStrength = (pass: string) => {
+    let strength = 0
+    if (pass.length > 5) strength += 1
+    if (pass.length > 8) strength += 1
+    if (/[A-Z]/.test(pass)) strength += 1
+    if (/[0-9]/.test(pass)) strength += 1
+    if (/[^A-Za-z0-9]/.test(pass)) strength += 1
+    return strength
   }
+
+  const passwordStrength = getPasswordStrength(password)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!agreedToPolicy) {
+      toast.error('You must agree to our policies')
+      return
+    }
+
     setIsLoading(true)
 
     try {
-      const formData = new FormData()
-      formData.append('fullName', fullName)
-      formData.append('email', email)
-      formData.append('whatsapp', whatsapp)
-      formData.append('baliAddress', baliAddress)
-      formData.append('mapsAddressLink', mapsAddressLink)
-      if (passportPhoto) {
-        formData.append('passportPhoto', passportPhoto)
-      }
-
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fullName,
+          email,
+          whatsapp,
+          password,
+          baliAddress,
+          mapsAddressLink,
+        }),
       })
 
       if (response.ok) {
-        const data = await response.json()
-        toast.success('Account created successfully! Please save your credentials.')
-        // Show credentials
-        alert(`Your account has been created!\n\nUsername: ${data.credentials.username}\nPassword: ${data.credentials.password}\n\nPlease save these credentials for future login.`)
+        toast.success('Account created successfully! Please login.')
         router.push('/auth/login')
       } else {
         const error = await response.json()
@@ -68,8 +82,16 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/10 via-background to-primary/5 py-12">
-      <Card className="w-full max-w-lg">
-        <CardHeader className="text-center">
+      <Card className="w-full max-w-lg relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute right-4 top-4 text-muted-foreground hover:text-foreground"
+          onClick={() => router.push('/')}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+        <CardHeader className="text-center pt-10">
           <CardTitle className="text-3xl font-bold text-primary">Tropic Tech</CardTitle>
           <CardDescription>{t('signUp')}</CardDescription>
         </CardHeader>
@@ -111,6 +133,57 @@ export default function SignupPage() {
                 disabled={isLoading}
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password *</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Create a strong password"
+                  required
+                  disabled={isLoading}
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
+              {/* Password Strength Bar */}
+              <div className="flex gap-1 h-1.5 mt-2">
+                {[...Array(5)].map((_, i) => (
+                  <div
+                    key={i}
+                    className={`h-full flex-1 rounded-full transition-colors duration-300 ${i < passwordStrength
+                        ? passwordStrength <= 2
+                          ? 'bg-red-500'
+                          : passwordStrength <= 3
+                            ? 'bg-yellow-500'
+                            : 'bg-green-500'
+                        : 'bg-muted'
+                      }`}
+                  />
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground text-right">
+                {passwordStrength <= 2 && password.length > 0 ? 'Weak' :
+                  passwordStrength <= 3 && password.length > 0 ? 'Medium' :
+                    passwordStrength > 3 ? 'Strong' : ''}
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="baliAddress">Bali Address</Label>
               <Textarea
@@ -133,26 +206,21 @@ export default function SignupPage() {
                 disabled={isLoading}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="passportPhoto">
-                Passport Photo
-                <span className="text-xs text-muted-foreground ml-2">
-                  (Uploading passport speeds up delivery)
-                </span>
-              </Label>
-              <Input
-                id="passportPhoto"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                disabled={isLoading}
+
+            <div className="flex items-center space-x-2 pt-2">
+              <Checkbox
+                id="terms"
+                checked={agreedToPolicy}
+                onCheckedChange={(checked) => setAgreedToPolicy(checked as boolean)}
               />
-              {passportPhoto && (
-                <p className="text-xs text-muted-foreground">
-                  Selected: {passportPhoto.name}
-                </p>
-              )}
+              <label
+                htmlFor="terms"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                I agree with the <Link href="/policies" className="text-primary hover:underline">Policies</Link>
+              </label>
             </div>
+
             <Button
               type="submit"
               className="w-full"
