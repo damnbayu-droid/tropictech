@@ -18,7 +18,17 @@ export default async function AdminProductsPage() {
     })
 
     const formattedProducts = products.map(p => ({
-        ...p,
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        category: p.category,
+        monthlyPrice: Number(p.monthlyPrice),
+        stock: p.stock,
+        imageUrl: p.imageUrl,
+        images: p.images,
+        specs: p.specs,
+        createdAt: p.createdAt?.toISOString(),
+        _count: p._count,
         price: Number(p.monthlyPrice),
         isDeletable: p._count.rentalItems === 0 && p._count.rentalPackageItems === 0 && p._count.productUnits === 0
     }))

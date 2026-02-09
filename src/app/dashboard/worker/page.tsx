@@ -139,130 +139,130 @@ export default function WorkerDashboard() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background selection:bg-primary/20">
       <Header />
 
-      <main className="flex-1 py-8 px-4 mt-16">
+      <main className="flex-1 py-12 px-4 mt-16 pb-20">
         <div className="container mx-auto">
-          {/* Top Bar with Back to Home */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-            <div className="space-y-1">
-              <h1 className="text-4xl font-black tracking-tight text-primary">WORKER DASHBOARD</h1>
-              <div className="flex items-center gap-2 text-muted-foreground font-medium">
-                <Badge variant="outline" className="rounded-full px-4 border-primary/20 bg-primary/5 text-primary">ACTIVE SESSION</Badge>
+          {/* Dashboard Header */}
+          <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="h-1 bg-primary w-12 rounded-full" />
+                <span className="text-xs font-black uppercase tracking-[0.2em] text-primary">Operational Hub</span>
+              </div>
+              <h1 className="text-5xl md:text-6xl font-black tracking-tighter uppercase leading-none">
+                WORKER <span className="text-primary">DASHBOARD</span>
+              </h1>
+              <div className="flex items-center gap-3 text-muted-foreground font-bold text-sm">
+                <Badge variant="outline" className="rounded-full px-4 border-primary/20 bg-primary/5 text-primary text-[10px] font-black">ACTIVE SESSION</Badge>
                 <span>•</span>
-                <span className="text-sm">Welcome back, {user?.fullName || 'Worker'}</span>
+                <span className="tracking-tight italic">{user?.fullName || 'Operational Staff'}</span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" className="rounded-full font-bold gap-2" onClick={() => router.push('/')}>
+
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" className="rounded-full font-black text-xs tracking-widest gap-2 hover:bg-primary/5" onClick={() => router.push('/')}>
                 <Home className="h-4 w-4" /> BACK TO HOME
               </Button>
-              <Button variant="ghost" size="icon" className="rounded-full text-destructive" onClick={() => logout()}>
+              <Button variant="ghost" size="icon" className="rounded-full text-destructive hover:bg-destructive/10" onClick={() => logout()}>
                 <LogOut className="h-5 w-5" />
               </Button>
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-12 gap-6">
+          <div className="grid lg:grid-cols-12 gap-8">
             {/* Left Column: Stats & Schedule */}
-            <div className="lg:col-span-8 space-y-6">
-              {/* Worker Stats Quick View */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Card className="border-none shadow-sm bg-gradient-to-br from-blue-500/10 to-transparent">
-                  <CardContent className="pt-6">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Completed Jobs</p>
-                        <p className="text-3xl font-black">24</p>
-                      </div>
-                      <div className="p-2 bg-blue-500/10 rounded-xl">
-                        <CheckCircle2 className="h-5 w-5 text-blue-500" />
-                      </div>
+            <div className="lg:col-span-8 space-y-8">
+              {/* Worker Stats Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <Card className="border-none shadow-sm bg-zinc-900 text-white overflow-hidden group">
+                  <CardContent className="p-6 relative">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+                      <CheckCircle2 className="h-16 w-16" />
+                    </div>
+                    <div className="space-y-1 relative z-10">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Completed Jobs</p>
+                      <p className="text-4xl font-black">24</p>
                     </div>
                   </CardContent>
                 </Card>
-                <Card className="border-none shadow-sm bg-gradient-to-br from-orange-500/10 to-transparent">
-                  <CardContent className="pt-6">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Pending Tasks</p>
-                        <p className="text-3xl font-black">{assignedOrders.length}</p>
-                      </div>
-                      <div className="p-2 bg-orange-500/10 rounded-xl">
-                        <Clock className="h-5 w-5 text-orange-500" />
-                      </div>
+
+                <Card className="border-none shadow-sm bg-primary/10 overflow-hidden">
+                  <CardContent className="p-6">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Pending Tasks</p>
+                      <p className="text-4xl font-black text-primary">{assignedOrders.length}</p>
                     </div>
                   </CardContent>
                 </Card>
-                <Card className="border-none shadow-sm bg-gradient-to-br from-green-500/10 to-transparent">
-                  <CardContent className="pt-6">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Reports Filed</p>
-                        <p className="text-3xl font-black">12</p>
-                      </div>
-                      <div className="p-2 bg-green-500/10 rounded-xl">
-                        <FileText className="h-5 w-5 text-green-500" />
-                      </div>
+
+                <Card className="border-none shadow-sm bg-muted/30 overflow-hidden">
+                  <CardContent className="p-6">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Reports</p>
+                      <p className="text-4xl font-black">12</p>
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
               {/* Job Schedule List */}
-              <Card className="border-none shadow-lg overflow-hidden">
-                <CardHeader className="bg-muted/50 border-b">
+              <Card className="border-none shadow-xl overflow-hidden rounded-3xl">
+                <CardHeader className="bg-zinc-900 text-white py-6">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg font-bold flex items-center gap-2">
+                    <CardTitle className="text-lg font-black tracking-widest flex items-center gap-3">
                       <Calendar className="h-5 w-5 text-primary" />
                       UPCOMING JOB SCHEDULE
                     </CardTitle>
-                    <Badge variant="secondary" className="font-bold">{assignedOrders.length} TASKS</Badge>
+                    <Badge className="bg-primary text-primary-foreground font-black px-4">{assignedOrders.length} TASKS</Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="divide-y">
+                  <div className="divide-y divide-border/50">
                     {assignedOrders.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                        <Calendar className="h-12 w-12 opacity-10 mb-2" />
-                        <p className="font-medium">No assigned jobs for today</p>
+                      <div className="flex flex-col items-center justify-center py-24 text-muted-foreground bg-muted/5">
+                        <Calendar className="h-16 w-16 opacity-10 mb-4" />
+                        <p className="font-black text-xl uppercase tracking-tighter">No jobs assigned</p>
+                        <p className="text-sm">Enjoy your break or check back later.</p>
                       </div>
                     ) : (
                       assignedOrders.map((order) => (
                         <div
                           key={order.id}
                           className={cn(
-                            "group p-6 hover:bg-muted/30 transition-all cursor-pointer relative",
+                            "group p-8 hover:bg-muted/30 transition-all cursor-pointer relative",
                             selectedOrder?.id === order.id && "bg-primary/5"
                           )}
                           onClick={() => setSelectedOrder(order)}
                         >
-                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-black text-lg">{order.orderNumber}</span>
-                                <Badge variant={order.deliveryConfirmed ? 'default' : 'secondary'} className="rounded-full text-[10px] font-bold">
-                                  {order.deliveryConfirmed ? 'DELIVERED' : 'PENDING'}
-                                </Badge>
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-3">
+                                <span className="font-black text-2xl tracking-tighter">{order.orderNumber}</span>
+                                {order.deliveryConfirmed ? (
+                                  <Badge className="bg-green-500/10 text-green-600 border-green-500/20 rounded-full font-black text-[10px] px-3">DELIVERED</Badge>
+                                ) : (
+                                  <Badge className="bg-primary/10 text-primary border-primary/20 rounded-full font-black text-[10px] px-3">PENDING</Badge>
+                                )}
                               </div>
-                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-1.5">
-                                  <Clock className="h-3.5 w-3.5" />
+                              <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground font-medium">
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4 text-primary" />
                                   {new Date(order.startDate).toLocaleDateString()}
                                 </div>
-                                <div className="flex items-center gap-1.5">
-                                  <MapPin className="h-3.5 w-3.5" />
-                                  {order.deliveryAddress || 'Area: Seminyak'}
+                                <div className="flex items-center gap-2">
+                                  <MapPin className="h-4 w-4 text-primary" />
+                                  {order.deliveryAddress || 'Area: Bali Region'}
                                 </div>
                               </div>
                             </div>
-                            <Button variant={selectedOrder?.id === order.id ? "default" : "secondary"} className="rounded-full font-bold px-6">
-                              {selectedOrder?.id === order.id ? 'MANAGING...' : 'VIEW DETAILS'}
+                            <Button variant={selectedOrder?.id === order.id ? "default" : "secondary"} className="rounded-xl font-black px-8 py-6 h-auto tracking-widest text-xs">
+                              {selectedOrder?.id === order.id ? 'MANAGING...' : 'VIEW TASK'}
                             </Button>
                           </div>
                           {selectedOrder?.id === order.id && (
-                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
+                            <div className="absolute left-0 top-0 bottom-0 w-2 bg-primary" />
                           )}
                         </div>
                       ))
@@ -271,60 +271,60 @@ export default function WorkerDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Weekly Performance Mock Chart/Reporting */}
-              <Card className="border-none shadow-sm h-[300px] flex items-center justify-center bg-muted/20 relative overflow-hidden group">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(0,0,0,0.05)_100%)]" />
-                <div className="z-10 text-center space-y-4">
-                  <div className="p-4 bg-background rounded-full shadow-xl inline-block group-hover:scale-110 transition-transform">
-                    <TrendingUp className="h-8 w-8 text-primary" />
+              {/* Performance Indicator */}
+              <Card className="border-none shadow-sm h-[320px] flex items-center justify-center bg-zinc-900 text-white relative overflow-hidden rounded-3xl group">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(255,165,0,0.05)_100%)]" />
+                <div className="z-10 text-center space-y-6 max-w-md px-8">
+                  <div className="h-20 w-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto ring-8 ring-primary/5 group-hover:scale-110 transition-transform duration-500">
+                    <TrendingUp className="h-10 w-10 text-primary" />
                   </div>
-                  <div className="space-y-1">
-                    <p className="font-black text-xl">PERFORMANCE ANALYTICS</p>
-                    <p className="text-sm text-muted-foreground max-w-md px-6">
-                      Detailed visual reports on completion rates and stock management efficiency are being calculated.
+                  <div className="space-y-2">
+                    <p className="font-black text-2xl tracking-tighter leading-tight uppercase">OPERATIONAL PERFORMANCE</p>
+                    <p className="text-sm text-zinc-400 font-medium">
+                      Your efficiency metrics and delivery completion analytics are synchronized in real-time with central HQ.
                     </p>
                   </div>
                 </div>
               </Card>
             </div>
 
-            {/* Right Column: Active Task & Inventory */}
-            <div className="lg:col-span-4 space-y-6">
-              {/* Active Delivery Report */}
+            {/* Right Column: Execution & Inventory */}
+            <div className="lg:col-span-4 space-y-8">
+              {/* Active Task Section */}
               {selectedOrder ? (
-                <Card className="border-none shadow-2xl border-2 border-primary/20 ring-4 ring-primary/5">
-                  <CardHeader className="bg-primary text-primary-foreground">
-                    <CardTitle className="text-base font-black uppercase tracking-tighter flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4" />
+                <Card className="border-none shadow-2xl overflow-hidden rounded-3xl ring-4 ring-primary/5">
+                  <CardHeader className="bg-primary text-primary-foreground py-6">
+                    <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5" />
                       TASK EXECUTION: {selectedOrder.orderNumber}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6 space-y-6">
-                    <div className="space-y-4">
-                      <div className="p-4 bg-muted rounded-xl space-y-2">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Delivery Target</p>
-                        <p className="font-bold text-sm leading-tight">{selectedOrder.deliveryAddress || 'Address details in notes'}</p>
+                  <CardContent className="p-8 space-y-8">
+                    <div className="space-y-6">
+                      <div className="p-5 bg-muted/50 rounded-2xl space-y-2 border">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Target Location</p>
+                        <p className="font-bold text-base leading-tight italic">"{selectedOrder.deliveryAddress || 'Check dispatch notes'}"</p>
                       </div>
 
-                      <div className="space-y-3">
-                        <Label className="text-xs font-black uppercase text-muted-foreground">Rental Items Checklist</Label>
-                        <div className="space-y-2">
+                      <div className="space-y-4">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Inventory Checklist</Label>
+                        <div className="space-y-3">
                           {selectedOrder.rentalItems?.map((item: any) => (
-                            <div key={item.id} className="flex items-center gap-3 p-3 bg-card border rounded-xl hover:border-primary/50 transition-colors">
-                              <Checkbox id={`item-${item.id}`} disabled={selectedOrder.deliveryConfirmed} className="rounded-md h-5 w-5" />
-                              <Label htmlFor={`item-${item.id}`} className="flex-1 text-sm font-medium cursor-pointer">
-                                {item.name || 'Equipment Unit'} <span className="text-primary font-black ml-1">x{item.quantity}</span>
+                            <div key={item.id} className="flex items-center gap-4 p-4 bg-background border rounded-2xl hover:border-primary/40 transition-all group">
+                              <Checkbox id={`item-${item.id}`} disabled={selectedOrder.deliveryConfirmed} className="rounded-md h-6 w-6 border-2" />
+                              <Label htmlFor={`item-${item.id}`} className="flex-1 text-sm font-black cursor-pointer group-hover:text-primary transition-colors">
+                                {item.name || 'Equipment Unit'} <span className="text-primary ml-2 uppercase opacity-50">x{item.quantity}</span>
                               </Label>
                             </div>
                           ))}
                         </div>
                       </div>
 
-                      <div className="space-y-3">
-                        <Label className="text-xs font-black uppercase text-muted-foreground">Evidence / Photos</Label>
-                        <div className="grid grid-cols-2 gap-2 mb-2">
+                      <div className="space-y-4">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Digital Evidence</Label>
+                        <div className="grid grid-cols-2 gap-3">
                           {deliveryPhotos.length > 0 && Array.from(deliveryPhotos).map((photo, i) => (
-                            <div key={i} className="aspect-square bg-muted rounded-xl overflow-hidden border">
+                            <div key={i} className="aspect-square bg-muted rounded-2xl overflow-hidden border-2 border-primary/10 shadow-inner">
                               <img src={URL.createObjectURL(photo)} alt="Preview" className="object-cover w-full h-full" />
                             </div>
                           ))}
@@ -339,59 +339,66 @@ export default function WorkerDashboard() {
                             onChange={(e) => setDeliveryPhotos(Array.from(e.target.files || []))}
                             disabled={selectedOrder.deliveryConfirmed}
                           />
-                          <Label htmlFor="photo-upload" className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 transition-colors gap-2">
-                            <Camera className="h-6 w-6 text-primary" />
-                            <span className="text-xs font-bold uppercase tracking-tight">Upload Proof</span>
+                          <Label htmlFor="photo-upload" className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-3xl cursor-pointer hover:bg-primary/5 hover:border-primary/40 transition-all gap-3 bg-muted/10">
+                            <div className="p-3 bg-background rounded-full shadow-sm">
+                              <Camera className="h-6 w-6 text-primary" />
+                            </div>
+                            <span className="text-xs font-black uppercase tracking-widest">Upload Capture</span>
                           </Label>
                         </div>
                       </div>
                     </div>
 
-                    <Button
-                      onClick={handleConfirmDelivery}
-                      disabled={selectedOrder.deliveryConfirmed || deliveryPhotos.length === 0}
-                      className="w-full h-14 rounded-xl font-black text-lg gap-3"
-                    >
-                      {selectedOrder.deliveryConfirmed ? <CheckCircle2 /> : <Plus />}
-                      {selectedOrder.deliveryConfirmed ? 'COMPLETED' : 'FINALIZE DELIVERY'}
-                    </Button>
-                    <Button variant="ghost" onClick={() => setSelectedOrder(null)} className="w-full font-bold text-muted-foreground">
-                      CANCEL TASK
-                    </Button>
+                    <div className="space-y-3 pt-4">
+                      <Button
+                        onClick={handleConfirmDelivery}
+                        disabled={selectedOrder.deliveryConfirmed || deliveryPhotos.length === 0}
+                        className="w-full h-16 rounded-2xl font-black text-lg gap-3 shadow-xl shadow-primary/20"
+                      >
+                        {selectedOrder.deliveryConfirmed ? <CheckCircle2 className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
+                        {selectedOrder.deliveryConfirmed ? 'MISSION COMPLETED' : 'FINALIZE DELIVERY'}
+                      </Button>
+                      <Button variant="ghost" onClick={() => setSelectedOrder(null)} className="w-full font-black text-xs tracking-widest bg-muted/20 hover:bg-muted/40 rounded-xl h-12 uppercase">
+                        CLOSE TASK
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ) : (
-                <div className="h-64 border-2 border-dashed rounded-3xl flex flex-col items-center justify-center text-muted-foreground p-8 text-center gap-4 bg-muted/10">
-                  <div className="p-4 bg-background rounded-full">
-                    <AlertCircle className="h-6 w-6 opacity-30" />
+                <div className="h-72 border-2 border-dashed rounded-[2.5rem] flex flex-col items-center justify-center text-muted-foreground p-10 text-center gap-6 bg-muted/5">
+                  <div className="p-5 bg-background rounded-full shadow-sm ring-8 ring-muted/10">
+                    <AlertCircle className="h-8 w-8 opacity-20" />
                   </div>
-                  <p className="text-sm font-medium">Select a job from the schedule to begin delivery reporting</p>
+                  <div className="space-y-1">
+                    <p className="text-lg font-black uppercase tracking-tighter">Duty Standing By</p>
+                    <p className="text-sm font-medium">Select a job from the schedule <br />to begin execution reporting.</p>
+                  </div>
                 </div>
               )}
 
               {/* Stock Inventory Quick Actions */}
-              <Card className="border-none shadow-sm overflow-hidden bg-zinc-900 text-white">
-                <CardHeader className="bg-white/5 border-b border-white/10">
-                  <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+              <Card className="border-none shadow-lg overflow-hidden bg-zinc-950 text-white rounded-3xl">
+                <CardHeader className="bg-white/5 border-b border-white/10 py-6">
+                  <CardTitle className="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3 text-primary">
                     <Package className="h-4 w-4" /> INVENTORY RE-SYNC
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-6 space-y-4">
+                <CardContent className="p-8 space-y-6">
                   {[
                     { id: 'standing-desk', name: 'STANDING DESKS', count: 12 },
                     { id: 'monitor', name: 'ULTRAWIDE MONITORS', count: 8 },
                     { id: 'chair', name: 'ERGONOMIC CHAIRS', count: 15 }
                   ].map(item => (
-                    <div key={item.id} className="space-y-2">
-                      <div className="flex justify-between items-center px-1">
-                        <span className="text-[10px] font-black text-white/60">{item.name}</span>
-                        <span className="text-xs font-bold">CURRENT: {item.count}</span>
+                    <div key={item.id} className="space-y-3">
+                      <div className="flex justify-between items-end px-1">
+                        <span className="text-[10px] font-black text-zinc-500 tracking-widest leading-none">{item.name}</span>
+                        <span className="text-xs font-black text-primary leading-none">LIVE: {item.count}</span>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-3">
                         <Input
                           type="number"
-                          placeholder="Qty..."
-                          className="bg-white/10 border-white/10 h-10 rounded-xl font-bold placeholder:text-white/20"
+                          placeholder="Adjustment..."
+                          className="bg-white/5 border-white/10 h-12 rounded-xl font-black placeholder:text-zinc-700 text-center"
                           onChange={(e) =>
                             setStockUpdates({ ...stockUpdates, [item.id]: parseInt(e.target.value) || 0 })
                           }
@@ -399,7 +406,7 @@ export default function WorkerDashboard() {
                         <Button
                           onClick={() => handleUpdateStock(item.id)}
                           size="sm"
-                          className="bg-primary text-primary-foreground font-black rounded-xl h-10 px-4"
+                          className="bg-white text-black hover:bg-primary hover:text-white font-black rounded-xl h-12 px-6 transition-all"
                         >
                           SYNC
                         </Button>

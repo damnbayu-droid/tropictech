@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import PackageCard from './PackageCard'
 
-export default function Packages({ onOrder }: { onOrder: (packageId: string) => void }) {
+import { useOrder } from './LandingClient'
+
+export default function Packages() {
+  const { handlePackageOrder: onOrder } = useOrder()
   const { t } = useLanguage()
   const [packages, setPackages] = useState<any[]>([])
 

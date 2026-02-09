@@ -13,26 +13,54 @@ export default async function AdminInventoryPage() {
             }
         }),
         db.product.findMany({
-            select: { id: true, name: true }
+            include: {
+                _count: {
+                    select: { productUnits: true }
+                },
+                productUnits: {
+                    select: { status: true }
+                }
+            }
         })
     ])
 
     const formattedUnits = units.map(u => ({
         id: u.id,
         unitCode: u.unitCode,
-        status: u.status, // AVAILABLE, IN_USE, DAMAGED
+        status: u.status,
         productId: u.productId,
         productName: u.product.name,
         category: u.product.category,
         purchaseDate: u.purchaseDate.toISOString()
     }))
 
+    const productAssets = products.map(p => {
+        const available = p.productUnits.filter(u => u.status === 'AVAILABLE').length
+        const rented = p.productUnits.filter(u => u.status === 'IN_USE').length
+        const total = p._count.productUnits
+
+        return {
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            total,
+            available,
+            rented,
+            status: total > 0 ? (available > 0 ? 'HEALTHY' : 'OUT_OF_STOCK') : 'NO_UNITS'
+        }
+    })
+
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h2 className="text-3xl font-bold tracking-tight">Inventory Units</h2>
+            <div className="flex flex-col gap-2">
+                <h2 className="text-3xl font-black tracking-tight uppercase">Inventory & Assets</h2>
+                <p className="text-muted-foreground italic font-medium">Real-time tracking of hardware units and stock status</p>
             </div>
-            <InventoryClient initialUnits={formattedUnits} products={products} />
+            <InventoryClient
+                initialUnits={formattedUnits}
+                productAssets={productAssets}
+                products={products.map(p => ({ id: p.id, name: p.name }))}
+            />
         </div>
     )
 }

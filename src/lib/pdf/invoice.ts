@@ -21,6 +21,7 @@ export interface InvoiceData {
   startDate: string
   endDate: string
   isRegistered?: boolean
+  status?: string
 }
 
 export function generateInvoicePDF(data: InvoiceData): jsPDF {
@@ -72,7 +73,7 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   doc.text(`Invoice Date: ${data.invoiceDate}`, 25, y)
   y += 6
   doc.text(`Order Number: ${data.orderNumber}`, 25, y)
-  y += 15
+  y += 20 // Increased from 15
 
   // Customer Details
   doc.setFontSize(14)
@@ -183,98 +184,74 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   doc.text(`${data.currency} ${data.total.toLocaleString()}`, pageWidth - 30, y)
   y += 20
 
-  // Confirmation Section
-  y = pageHeight - 100
-  doc.setDrawColor(220, 220, 220)
+  // Confirmation & Approval Section
+  y = pageHeight - 90
+  doc.setDrawColor(200, 200, 200)
   doc.line(20, y, pageWidth - 20, y)
-  y += 10
+  y += 12
 
-  if (data.isRegistered) {
-    // Barcode Placeholder for Registered Users
-    doc.setFont('helvetica', 'bold')
-    doc.text('CONFIRMATION BARCODE', 20, y)
-    y += 5
-    doc.setFillColor(0, 0, 0)
-    // Draw a simple barcode representation
-    for (let i = 0; i < 40; i++) {
-      const width = Math.random() > 0.5 ? 1 : 0.5
-      doc.rect(20 + i * 2, y, width, 15, 'F')
-    }
-    y += 20
-    doc.setFontSize(8)
-    doc.text(`USER_VERIFIED_ID: ${data.customerName.toUpperCase().replace(/\s/g, '_')}_${Date.now()}`, 20, y)
-  } else {
-    // Company Confirmation for Guest
-    doc.setFont('helvetica', 'bold')
-    doc.text('RENTAL CONFIRMATION', 20, y)
-    y += 8
-    doc.setFont('helvetica', 'italic')
-    doc.setFontSize(9)
-    doc.text('Confirmed Rented From Company:', 20, y)
-    y += 5
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(11)
-    doc.setTextColor(...primaryColor)
-    doc.text('PT TROPIC TECH INTERNATIONAL', 20, y)
-
-    // Simple "Stamp" representation
-    doc.setDrawColor(...primaryColor)
-    doc.setLineWidth(1)
-    doc.circle(pageWidth - 50, y, 15, 'S')
-    doc.setFontSize(8)
-    doc.text('OFFICIAL', pageWidth - 50, y - 2, { align: 'center' })
-    doc.text('STAMP', pageWidth - 50, y + 4, { align: 'center' })
-  }
-
-  // Footer - Payment Info
-  y = pageHeight - 55
-  doc.setTextColor(0, 0, 0)
+  doc.setFontSize(10)
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(11)
-  doc.setTextColor(...primaryColor)
-  doc.text('Payment Information:', 20, y)
-  y += 8
+  doc.setTextColor(0, 0, 0)
+  doc.text('APPROVAL & CONFIRMATION', 20, y)
+  y += 10
 
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
-  doc.setTextColor(0, 0, 0)
+  doc.text('Issued by Authority:', 20, y)
 
-  const paymentMethods = [
-    '• Cash',
-    '• PayPal / Credit / Debit Card',
-    '• Stripe / Crypto',
-    '• Order via WhatsApp',
-  ]
-
-  paymentMethods.forEach((method) => {
-    doc.text(method, 20, y)
-    y += 6
-  })
-  y += 10
-
-  // Contact Info
-  doc.line(20, y, pageWidth - 20, y)
-  y += 8
+  // PIC Section
+  const picX = pageWidth - 70
+  doc.text('PIC / Manager:', picX, y)
+  y += 5
 
   doc.setFont('helvetica', 'bold')
+  doc.setFontSize(11)
+  doc.setTextColor(...primaryColor)
+  doc.text('PT TROPIC TECH INTERNATIONAL', 20, y)
+
+  // Status-based Signature
+  if (data.status === 'PAID') {
+    doc.setTextColor(34, 197, 94) // Green
+    doc.setFont('helvetica', 'bolditalic')
+    doc.setFontSize(14)
+    doc.text('VERIFIED & PAID', picX, y + 8)
+  } else {
+    doc.setTextColor(...grayColor)
+    doc.setFont('helvetica', 'italic')
+    doc.setFontSize(10)
+    doc.text('(Waiting for Payment)', picX, y + 8)
+  }
+
+  y += 20
+  doc.setTextColor(0, 0, 0)
+  doc.setFont('helvetica', 'bold')
   doc.setFontSize(10)
-  doc.setTextColor(...grayColor)
-  doc.text('Contact Us:', 20, y)
+  doc.text('Wahyudin Damopolii', picX, y)
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(8)
+  doc.text('(PIC Approval)', picX, y + 4)
+
+  // Footer - Payment Info
+  y = pageHeight - 45
+  doc.setTextColor(...primaryColor)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(10)
+  doc.text('Payment Info:', 20, y)
   y += 6
 
-  doc.setFont('helvetica', 'normal')
-  doc.text('Email: tropictechindo@gmail.com', 20, y)
-  y += 5
-  doc.text('WhatsApp: +62 82266574860', 20, y)
-  y += 5
-  doc.text('Office: Jl. Tunjungsari No.8, Bali', 20, y)
-  y += 10
-
-  // Copyright
   doc.setFontSize(8)
+  doc.setTextColor(0, 0, 0)
+  doc.text('• Cash | PayPal | Stripe | Bank Transfer', 20, y)
+  y += 5
+  doc.text('• Office: Jl. Tunjungsari No.8, Bali', 20, y)
+
+  // Final Copyright
+  y = pageHeight - 15
+  doc.setFontSize(7)
   doc.setTextColor(180, 180, 180)
   doc.text(
-    '© 2024 PT Tropic Tech International. All Rights Reserved.',
+    '© 2026 PT Tropic Tech International. All Rights Reserved.',
     pageWidth / 2,
     y,
     { align: 'center' }

@@ -13,7 +13,7 @@ import Link from 'next/link'
 import { X, Eye, EyeOff } from 'lucide-react'
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -25,13 +25,13 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
 
-    const success = await login(username, password)
+    const success = await login(identifier, password)
 
     if (success) {
       toast.success('Login successful!')
       router.push('/')
     } else {
-      toast.error('Invalid username or password')
+      toast.error('Invalid email/username or password')
     }
 
     setIsLoading(false)
@@ -55,13 +55,13 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="identifier">Email or Username</Label>
               <Input
-                id="username"
+                id="identifier"
                 type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="Enter your email or username"
                 required
                 disabled={isLoading}
               />

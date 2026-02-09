@@ -210,10 +210,10 @@ export default function CheckoutPage() {
 
                             <div className="mt-8">
                                 <Button className="w-full text-lg py-6" onClick={handleBuy} disabled={isSubmitting}>
-                                    {isSubmitting ? 'Processing...' : 'Buy Now'}
+                                    {isSubmitting ? 'Processing...' : 'Pay Now'}
                                 </Button>
                                 <p className="text-xs text-center text-muted-foreground mt-4">
-                                    By clicking "Buy Now", you agree to our terms and conditions.
+                                    By clicking "Pay Now", you agree to our terms and conditions.
                                 </p>
                             </div>
                         </div>

@@ -258,6 +258,25 @@ export function PackagesClient({ initialPackages, availableProducts }: PackagesC
                             <Label htmlFor="description">Description (Optional)</Label>
                             <Textarea id="description" value={formData.description} rows={3} onChange={e => setFormData({ ...formData, description: e.target.value })} />
                         </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="imageUrl">Photo / Image Link</Label>
+                            <Input
+                                id="imageUrl"
+                                placeholder="https://example.com/image.jpg"
+                                value={formData.imageUrl}
+                                onChange={e => setFormData({ ...formData, imageUrl: e.target.value })}
+                            />
+                            {formData.imageUrl && (
+                                <div className="mt-2 relative h-32 w-full overflow-hidden rounded-xl border bg-muted">
+                                    <img
+                                        src={formData.imageUrl}
+                                        alt="Preview"
+                                        className="h-full w-full object-cover"
+                                        onError={(e) => (e.currentTarget.style.display = 'none')}
+                                    />
+                                </div>
+                            )}
+                        </div>
 
                         <div className="space-y-2 border-t pt-4">
                             <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Package Items</Label>

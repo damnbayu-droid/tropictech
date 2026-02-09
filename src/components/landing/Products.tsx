@@ -13,11 +13,10 @@ import {
   type CarouselApi
 } from '@/components/ui/carousel'
 
-export default function Products({
-  onOrder,
-}: {
-  onOrder: (productId: string, duration: number) => void
-}) {
+import { useOrder } from './LandingClient'
+
+export default function Products() {
+  const { handleProductOrder: onOrder } = useOrder()
   const { t } = useLanguage()
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [products, setProducts] = useState<any[]>([])
@@ -89,7 +88,31 @@ export default function Products({
           <CarouselContent className="-ml-2 md:-ml-4">
             {filteredProducts.map((product) => (
               <CarouselItem key={product.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/4">
-                <div className="p-1">
+                <div className="p-1 h-full">
+                  {/* Product Schema Markup */}
+                  <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                      __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "Product",
+                        "name": product.name,
+                        "description": product.description,
+                        "image": product.image,
+                        "category": product.category,
+                        "offers": {
+                          "@type": "Offer",
+                          "price": product.basePrice,
+                          "priceCurrency": "IDR",
+                          "availability": "https://schema.org/InStock",
+                          "seller": {
+                            "@type": "Organization",
+                            "name": "Tropic Tech Bali"
+                          }
+                        }
+                      })
+                    }}
+                  />
                   <ProductCard
                     product={product}
                     onOrder={onOrder}

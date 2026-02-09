@@ -13,8 +13,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const user = await db.user.findUnique({
-      where: { username },
+    const user = await db.user.findFirst({
+      where: {
+        OR: [
+          { username },
+          { email: username },
+        ],
+      },
     })
 
     if (!user) {

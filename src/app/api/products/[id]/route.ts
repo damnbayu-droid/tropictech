@@ -34,10 +34,17 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
-    const json = await request.json()
+    const data = await request.json()
     const product = await db.product.update({
       where: { id },
-      data: json,
+      data: {
+        name: data.name,
+        description: data.description,
+        category: data.category,
+        monthlyPrice: data.monthlyPrice,
+        imageUrl: data.imageUrl,
+        stock: data.stock !== undefined ? data.stock : undefined,
+      },
     })
     return NextResponse.json({ product })
   } catch (error) {

@@ -13,18 +13,15 @@ export default function Hero() {
   const [sliderOpacity, setSliderOpacity] = useState(0)
 
   useEffect(() => {
-    // Animate opacity from 0 to 100 over 3 seconds on mount
-    const timer = setTimeout(() => {
-      setImageOpacity(50)
-    }, 100)
+    // Immediate opacity for LCP
+    setImageOpacity(50)
 
-    // Slider appears after 3 seconds, taking 3 seconds to fade in
+    // Slider appears after 2 seconds
     const sliderTimer = setTimeout(() => {
       setSliderOpacity(100)
-    }, 3000)
+    }, 2000)
 
     return () => {
-      clearTimeout(timer)
       clearTimeout(sliderTimer)
     }
   }, [])
@@ -40,7 +37,7 @@ export default function Hero() {
           src="/images/hero.webp"
           alt="Tropic Tech Workstation Rental Bali"
           fill
-          className="object-cover transition-opacity duration-[3000ms] ease-in-out"
+          className="object-cover transition-opacity duration-300 ease-in-out"
           style={{ opacity: imageOpacity / 100 }}
           priority
           fetchPriority="high"
@@ -63,39 +60,13 @@ export default function Hero() {
         <div className="flex flex-col items-center gap-4">
           <Button
             size="lg"
-            className="text-lg px-8 py-5 h-auto font-bold shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all rounded-full"
+            className="text-lg px-8 py-4 h-auto font-bold shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all rounded-md overflow-hidden group relative"
             onClick={scrollToProducts}
             aria-label="Scroll to workstation rentals"
           >
-            {t('rentNow')}
+            <span className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
+            <span className="relative z-10">{t('rentNow')}</span>
           </Button>
-
-          <div className="flex flex-wrap justify-center gap-3 mt-4 opacity-60 hover:opacity-100 transition-opacity">
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full px-6 border-primary/20 bg-primary/5 hover:bg-primary hover:text-white transition-all font-bold"
-              onClick={() => window.location.href = '/admin/overview'}
-            >
-              ADMIN
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full px-6 border-orange-500/20 bg-orange-500/5 hover:bg-orange-500 hover:text-white transition-all font-bold"
-              onClick={() => window.location.href = '/dashboard/worker'}
-            >
-              WORKER
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full px-6 border-blue-500/20 bg-blue-500/5 hover:bg-blue-500 hover:text-white transition-all font-bold"
-              onClick={() => window.location.href = '/dashboard/user'}
-            >
-              USER
-            </Button>
-          </div>
         </div>
       </div>
 

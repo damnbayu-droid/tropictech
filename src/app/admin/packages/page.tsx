@@ -25,8 +25,13 @@ export default async function AdminPackagesPage() {
     ])
 
     const formattedPackages = packages.map(pkg => ({
-        ...pkg,
+        id: pkg.id,
+        name: pkg.name,
+        description: pkg.description,
         price: Number(pkg.price),
+        duration: pkg.duration,
+        imageUrl: pkg.imageUrl,
+        createdAt: pkg.createdAt?.toISOString() || null,
         items: pkg.rentalPackageItems.map(item => ({
             id: item.id,
             productId: item.productId,

@@ -7,7 +7,7 @@ import LandingClient from '@/components/landing/LandingClient'
 const Products = dynamic(() => import('@/components/landing/Products'))
 const Packages = dynamic(() => import('@/components/landing/Packages'))
 const Services = dynamic(() => import('@/components/landing/Services'))
-const FAQ = dynamic(() => import('@/components/landing/FAQ'), { ssr: false })
+const FAQ = dynamic(() => import('@/components/landing/FAQ'))
 const AboutUs = dynamic(() => import('@/components/landing/AboutUs'))
 const Reviews = dynamic(() => import('@/components/landing/Reviews'))
 const Footer = dynamic(() => import('@/components/landing/Footer'))
@@ -19,12 +19,8 @@ export default function Home() {
       <main className="flex-1">
         <Hero />
         <LandingClient>
-          {({ handleProductOrder, handlePackageOrder }) => (
-            <>
-              <Products onOrder={handleProductOrder} />
-              <Packages onOrder={handlePackageOrder} />
-            </>
-          )}
+          <Products />
+          <Packages />
         </LandingClient>
         <Services />
         <FAQ />
@@ -37,69 +33,100 @@ export default function Home() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "RentalBusiness",
-            "name": "Tropic Tech - Bali Workstation Rental",
-            "description": "Professional high-performance workstation and office equipment rental in Bali. Serving digital nomads, remote workers, and businesses since 2020.",
-            "url": "https://tropictechbali.com",
-            "telephone": "+6282266574860",
-            "email": "tropictechindo@gmail.com",
-            "logo": "https://i.ibb.co.com/Pzbsg8mx/2.jpg",
-            "image": "https://i.ibb.co.com/Pzbsg8mx/2.jpg",
-            "address": {
-              "@type": "PostalAddress",
-              "streetAddress": "Jl. Tunjungsari No.8",
-              "addressLocality": "Badung",
-              "addressRegion": "Bali",
-              "postalCode": "80361",
-              "addressCountry": "ID"
-            },
-            "geo": {
-              "@type": "GeoCoordinates",
-              "latitude": -8.409518,
-              "longitude": 115.188919
-            },
-            "openingHoursSpecification": [
-              {
-                "@type": "OpeningHoursSpecification",
-                "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-                "opens": "09:00",
-                "closes": "18:00"
+          __html: JSON.stringify([
+            {
+              "@context": "https://schema.org",
+              "@type": "RentalBusiness",
+              "name": "Tropic Tech - #1 Workstation Rental Bali",
+              "description": "Premium workstation and office equipment rental in Bali. High-performance monitors, ergonomic chairs, and desks for digital nomads. 5+ years experience with fast island-wide delivery.",
+              "url": "https://tropictechbali.com",
+              "telephone": "+6282266574860",
+              "email": "tropictechindo@gmail.com",
+              "logo": "https://i.ibb.co.com/Pzbsg8mx/2.jpg",
+              "image": "https://i.ibb.co.com/Pzbsg8mx/2.jpg",
+              "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "Jl. Tunjungsari No.8",
+                "addressLocality": "Badung",
+                "addressRegion": "Bali",
+                "postalCode": "80361",
+                "addressCountry": "ID"
               },
-              {
-                "@type": "OpeningHoursSpecification",
-                "dayOfWeek": "Saturday",
-                "opens": "10:00",
-                "closes": "16:00"
-              }
-            ],
-            "priceRange": "$$",
-            "sameAs": [
-              "https://www.instagram.com/tropictechs",
-              "https://wa.me/6282266574860"
-            ],
-            "hasOfferCatalog": {
-              "@type": "OfferCatalog",
-              "name": "Workstation & Office Rental Services",
-              "itemListElement": [
+              "geo": {
+                "@type": "GeoCoordinates",
+                "latitude": -8.6539,
+                "longitude": 115.1469
+              },
+              "openingHoursSpecification": [
                 {
-                  "@type": "Offer",
-                  "itemOffered": {
-                    "@type": "Service",
-                    "name": "Monitor Rental"
+                  "@type": "OpeningHoursSpecification",
+                  "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+                  "opens": "09:00",
+                  "closes": "18:00"
+                },
+                {
+                  "@type": "OpeningHoursSpecification",
+                  "dayOfWeek": ["Saturday", "Sunday"],
+                  "opens": "10:00",
+                  "closes": "16:00"
+                }
+              ],
+              "priceRange": "Rp 50,000 - Rp 2,000,000",
+              "sameAs": [
+                "https://www.instagram.com/tropictechs",
+                "https://wa.me/6282266574860"
+              ],
+              "hasOfferCatalog": {
+                "@type": "OfferCatalog",
+                "name": "Workstation & Office Rental Services",
+                "itemListElement": [
+                  {
+                    "@type": "Offer",
+                    "itemOffered": {
+                      "@type": "Service",
+                      "name": "Monitor Rental (Standard & Ultrawide)"
+                    }
+                  },
+                  {
+                    "@type": "Offer",
+                    "itemOffered": {
+                      "@type": "Service",
+                      "name": "Ergonomic Office Chair Rental"
+                    }
+                  },
+                  {
+                    "@type": "Offer",
+                    "itemOffered": {
+                      "@type": "Service",
+                      "name": "Standing Desk & Office Table Rental"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              "mainEntity": [
+                {
+                  "@type": "Question",
+                  "name": "How do I rent workstation equipment in Bali?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Browse our products on tropictechbali.com, select your duration (daily/weekly/monthly), and place an order. We offer fast delivery across Bali including Canggu, Ubud, and Seminyak."
                   }
                 },
                 {
-                  "@type": "Offer",
-                  "itemOffered": {
-                    "@type": "Service",
-                    "name": "Ergonomic Chair Rental"
+                  "@type": "Question",
+                  "name": "Do you offer ergonomic chairs for rent?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes, we provide premium ergonomic office chairs from top brands like ErgoChair and Sihoo, specifically designed for long hours of remote work."
                   }
                 }
               ]
             }
-          })
+          ])
         }}
       />
     </div>

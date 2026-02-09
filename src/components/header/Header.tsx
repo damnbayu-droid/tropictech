@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ShoppingCart, User, Globe, Menu, X, FileText, Trash2, LayoutDashboard, LogOut, Home } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { LoginModal } from '@/components/auth/LoginModal'
 import { SignupModal } from '@/components/auth/SignupModal'
@@ -37,6 +37,7 @@ import {
 export default function Header() {
   const { user, isAuthenticated, logout } = useAuth()
   const { language, setLanguage, languageNames, t } = useLanguage()
+  const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [globeOpen, setGlobeOpen] = useState(false)
@@ -51,30 +52,37 @@ export default function Header() {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    let isActive = true
     setMounted(true)
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10)
+      if (isActive) setIsScrolled(window.scrollY > 0)
     }
     window.addEventListener('scroll', handleScroll)
 
     // Show educational tooltip after 5 seconds
+    let tooltipTimer2: NodeJS.Timeout | null = null
     const tooltipTimer = setTimeout(() => {
-      setShowGlobeTooltip(true)
-      // Hide it after 5 seconds of showing
-      setTimeout(() => {
-        setShowGlobeTooltip(false)
-      }, 5000)
+      if (isActive) {
+        setShowGlobeTooltip(true)
+        // Hide it after 5 seconds of showing
+        tooltipTimer2 = setTimeout(() => {
+          if (isActive) setShowGlobeTooltip(false)
+        }, 5000)
+      }
     }, 5000)
 
     return () => {
+      isActive = false
       window.removeEventListener('scroll', handleScroll)
       clearTimeout(tooltipTimer)
+      if (tooltipTimer2) clearTimeout(tooltipTimer2)
+      if (timerRef.current) clearTimeout(timerRef.current)
     }
   }, [])
 
   const handleProfileClick = () => {
     if (user?.role === 'ADMIN') {
-      router.push('/dashboard/admin')
+      router.push('/admin/overview')
     } else if (user?.role === 'WORKER') {
       router.push('/dashboard/worker')
     } else {
@@ -103,6 +111,9 @@ export default function Header() {
     }
   }
 
+  const isAdminRoute = pathname?.startsWith('/admin')
+  const showLogo = !isAdminRoute || isScrolled
+
   return (
     <>
       <header
@@ -116,7 +127,10 @@ export default function Header() {
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
-            <div className="flex items-center space-x-2">
+            <div className={cn(
+              "flex items-center space-x-2 transition-all duration-500",
+              showLogo ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-10 pointer-events-none"
+            )}>
               <Link href="/" className="text-2xl font-bold text-primary">
                 Tropic Tech
               </Link>
@@ -199,10 +213,18 @@ export default function Header() {
 
                   {isAuthenticated ? (
                     <>
-                      {/* Globe with Tooltip */}
+                      {/* Globe with Tooltip and Hover-to-Language */}
                       <TooltipProvider>
-                        <Tooltip open={showGlobeTooltip}>
-                          <div className="relative inline-block">
+                        <Tooltip open={showGlobeTooltip && !globeOpen}>
+                          <div
+                            className="relative inline-block"
+                            onMouseEnter={() => {
+                              if (window.innerWidth >= 768) setGlobeOpen(true)
+                            }}
+                            onMouseLeave={() => {
+                              if (window.innerWidth >= 768) setGlobeOpen(false)
+                            }}
+                          >
                             <TooltipTrigger asChild>
                               <Button
                                 variant="ghost"
@@ -218,13 +240,25 @@ export default function Header() {
                               </Button>
                             </TooltipTrigger>
 
-                            <DropdownMenu open={globeOpen} onOpenChange={setGlobeOpen}>
+                            <DropdownMenu open={globeOpen} onOpenChange={setGlobeOpen} modal={false}>
                               <DropdownMenuTrigger className="absolute inset-0 opacity-0 pointer-events-none" aria-hidden="true" />
-                              <DropdownMenuContent align="end" className="dark:bg-slate-900 dark:border-slate-800 animate-in slide-in-from-top-5 fade-in duration-300">
+                              <DropdownMenuContent
+                                align="end"
+                                className="dark:bg-slate-900 dark:border-slate-800 animate-in slide-in-from-top-5 fade-in duration-300"
+                                onMouseEnter={() => {
+                                  if (window.innerWidth >= 768) setGlobeOpen(true)
+                                }}
+                                onMouseLeave={() => {
+                                  if (window.innerWidth >= 768) setGlobeOpen(false)
+                                }}
+                              >
                                 {(Object.keys(languageNames) as Array<keyof typeof languageNames>).map((lang) => (
                                   <DropdownMenuItem
                                     key={lang}
-                                    onClick={() => setLanguage(lang)}
+                                    onClick={() => {
+                                      setLanguage(lang)
+                                      setGlobeOpen(false)
+                                    }}
                                     className={language === lang ? 'bg-accent' : ''}
                                   >
                                     {languageNames[lang]}
@@ -235,7 +269,7 @@ export default function Header() {
                           </div>
                           <TooltipContent side="bottom" className="animate-in fade-in slide-in-from-top-2 duration-1000 bg-transparent backdrop-blur-md border-none shadow-none text-foreground">
                             <p className="font-semibold">Click on Change to Dark/White Mode</p>
-                            <p className="text-xs">Hold 2 Second for 10 Language Options</p>
+                            <p className="text-xs">Hover or Hold 2s for Language Options</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -273,10 +307,18 @@ export default function Header() {
                         {t('login')}
                       </Button>
 
-                      {/* Globe with Tooltip */}
+                      {/* Globe with Tooltip and Hover-to-Language */}
                       <TooltipProvider>
-                        <Tooltip open={showGlobeTooltip}>
-                          <div className="relative inline-block">
+                        <Tooltip open={showGlobeTooltip && !globeOpen}>
+                          <div
+                            className="relative inline-block"
+                            onMouseEnter={() => {
+                              if (window.innerWidth >= 768) setGlobeOpen(true)
+                            }}
+                            onMouseLeave={() => {
+                              if (window.innerWidth >= 768) setGlobeOpen(false)
+                            }}
+                          >
                             <TooltipTrigger asChild>
                               <Button
                                 variant="ghost"
@@ -291,13 +333,25 @@ export default function Header() {
                               </Button>
                             </TooltipTrigger>
 
-                            <DropdownMenu open={globeOpen} onOpenChange={setGlobeOpen}>
+                            <DropdownMenu open={globeOpen} onOpenChange={setGlobeOpen} modal={false}>
                               <DropdownMenuTrigger className="absolute inset-0 opacity-0 pointer-events-none" aria-hidden="true" />
-                              <DropdownMenuContent align="end" className="dark:bg-slate-900 dark:border-slate-800 animate-in slide-in-from-top-5 fade-in duration-300">
+                              <DropdownMenuContent
+                                align="end"
+                                className="dark:bg-slate-900 dark:border-slate-800 animate-in slide-in-from-top-5 fade-in duration-300"
+                                onMouseEnter={() => {
+                                  if (window.innerWidth >= 768) setGlobeOpen(true)
+                                }}
+                                onMouseLeave={() => {
+                                  if (window.innerWidth >= 768) setGlobeOpen(false)
+                                }}
+                              >
                                 {(Object.keys(languageNames) as Array<keyof typeof languageNames>).map((lang) => (
                                   <DropdownMenuItem
                                     key={lang}
-                                    onClick={() => setLanguage(lang)}
+                                    onClick={() => {
+                                      setLanguage(lang)
+                                      setGlobeOpen(false)
+                                    }}
                                     className={language === lang ? 'bg-accent' : ''}
                                   >
                                     {languageNames[lang]}
@@ -308,7 +362,7 @@ export default function Header() {
                           </div>
                           <TooltipContent side="bottom" className="animate-in fade-in slide-in-from-top-2 duration-1000 bg-transparent backdrop-blur-md border-none shadow-none text-foreground">
                             <p className="font-semibold">Click on Change to Dark/White Mode</p>
-                            <p className="text-xs">Hold 2 Second for 10 Language Options</p>
+                            <p className="text-xs">Hover or Hold 2s for Language Options</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -333,37 +387,64 @@ export default function Header() {
 
           {/* Mobile Menu */}
           {mobileMenuOpen && (
-            <div className="md:hidden py-4 space-y-4 border-t bg-background/95 backdrop-blur-md">
-              <Button variant="ghost" className="w-full justify-start" onClick={() => router.push('/checkout')}>
-                <ShoppingCart className="h-5 w-5 mr-2" />
-                {t('cart')}
-                {itemCount > 0 && (
-                  <span className="ml-auto bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">
-                    {itemCount}
-                  </span>
-                )}
-              </Button>
+            <div className="md:hidden py-6 px-4 space-y-3 border-t bg-background/98 backdrop-blur-xl animate-in slide-in-from-top-5 duration-300">
+              <div className="grid grid-cols-1 gap-2">
+                <Button variant="ghost" className="w-full justify-start h-12 text-base" onClick={() => {
+                  setMobileMenuOpen(false);
+                  router.push('/checkout');
+                }}>
+                  <ShoppingCart className="h-5 w-5 mr-3 text-primary" />
+                  {t('cart')}
+                  {itemCount > 0 && (
+                    <span className="ml-auto bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">
+                      {itemCount}
+                    </span>
+                  )}
+                </Button>
 
-              {isAuthenticated ? (
-                <>
-                  <Button variant="ghost" className="w-full justify-start" onClick={handleProfileClick}>
-                    <User className="h-5 w-5 mr-2" />
-                    {t('profile')}
-                  </Button>
-                  <Button variant="outline" className="w-full" onClick={logout}>
-                    {t('logout')}
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button variant="ghost" className="w-full justify-start" onClick={() => setShowSignupModal(true)}>
-                    {t('signUp')}
-                  </Button>
-                  <Button className="w-full justify-start" onClick={() => setShowLoginModal(true)}>
-                    {t('login')}
-                  </Button>
-                </>
-              )}
+                {isAuthenticated ? (
+                  <>
+                    <Button variant="ghost" className="w-full justify-start h-12 text-base" onClick={() => {
+                      setMobileMenuOpen(false);
+                      handleProfileClick();
+                    }}>
+                      <User className="h-5 w-5 mr-3 text-primary" />
+                      {t('profile')}
+                    </Button>
+                    <div className="pt-2">
+                      <Button variant="outline" className="w-full h-11 border-destructive/20 text-destructive hover:bg-destructive/10" onClick={() => {
+                        setMobileMenuOpen(false);
+                        logout();
+                      }}>
+                        <LogOut className="h-4 w-4 mr-2" />
+                        {t('logout')}
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 pt-2">
+                    <Button
+                      className="w-full h-11 text-base font-semibold shadow-lg shadow-primary/10"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        setShowLoginModal(true);
+                      }}
+                    >
+                      {t('login')}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full h-11 text-base"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        setShowSignupModal(true);
+                      }}
+                    >
+                      {t('signUp')}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

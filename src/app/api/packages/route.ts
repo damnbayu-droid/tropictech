@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
@@ -6,61 +6,68 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   try {
     const packages = await db.rentalPackage.findMany({
+      orderBy: { createdAt: 'desc' },
       include: {
         rentalPackageItems: {
           include: {
-            product: true
-          }
-        }
+            product: true,
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' },
     })
-
-    const formatted = packages.map(pkg => ({
-      id: pkg.id,
-      name: pkg.name,
-      description: pkg.description,
-      imageUrl: pkg.imageUrl,
-      price: Number(pkg.price), // Decimal to number
-      duration: pkg.duration,
+    const formattedPackages = packages.map(pkg => ({
+      ...pkg,
+      price: Number(pkg.price),
       items: pkg.rentalPackageItems.map(item => ({
         id: item.id,
-        quantity: item.quantity,
-        product: {
-          name: item.product.name
-        }
+        productId: item.productId,
+        name: item.product.name,
+        quantity: item.quantity || 0,
+        product: item.product // Keep for compatibility
       }))
     }))
-
-    return NextResponse.json({ packages: formatted })
+    return NextResponse.json({ packages: formattedPackages })
   } catch (error) {
-    console.error('Error fetching packages FULL:', error)
-    return NextResponse.json({ error: 'Failed to fetch packages', details: String(error) }, { status: 500 })
+    console.error('Error fetching packages:', error)
+    return NextResponse.json({ error: 'Failed to fetch packages' }, { status: 500 })
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const json = await request.json()
-    const { items, ...packageData } = json
+    const data = await request.json()
+    const { name, description, price, duration, imageUrl, items } = data
 
-    // Prepare Prisma data
-    const data: any = { ...packageData }
+    const rentalPackage = await db.rentalPackage.create({
+      data: {
+        name,
+        description,
+        price,
+        duration,
+        imageUrl,
+        rentalPackageItems: {
+          create: items.map((item: any) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+          })),
+        },
+      },
+      include: {
+        rentalPackageItems: true,
+      },
+    })
 
-    // Handle items if present
-    if (items && Array.isArray(items)) {
-      data.rentalPackageItems = {
-        create: items.map((item: any) => ({
-          productId: item.productId,
-          quantity: item.quantity || 1
-        }))
-      }
+    const formattedPackage = {
+      ...rentalPackage,
+      price: Number(rentalPackage.price),
+      items: rentalPackage.rentalPackageItems.map(item => ({
+        id: item.id,
+        productId: item.productId,
+        quantity: item.quantity || 0,
+      }))
     }
 
-    const pkg = await db.rentalPackage.create({
-      data: data,
-    })
-    return NextResponse.json({ package: pkg }, { status: 201 })
+    return NextResponse.json({ package: formattedPackage }, { status: 201 })
   } catch (error) {
     console.error('Error creating package:', error)
     return NextResponse.json({ error: 'Failed to create package' }, { status: 500 })

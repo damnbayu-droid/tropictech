@@ -17,6 +17,7 @@ model Invoice {
   guestName      String?   @map("guest_name")
   guestEmail     String?   @map("guest_email")
   guestWhatsapp  String?   @map("guest_whatsapp")
+  guestAddress   String?   @map("guest_address")
   user           User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   subtotal       Decimal   @db.Decimal(10, 2)
   tax            Decimal   @default(0) @db.Decimal(10, 2)
@@ -151,10 +152,26 @@ model User {
   baliAddress     String?   @map("bali_address")
   mapsAddressLink String?   @map("maps_address_link")
   role            String    @default("USER")
+  isActive        Boolean   @default(true) @map("is_active")
   isVerified      Boolean   @default(false) @map("is_verified")
+  resetPasswordToken   String?   @map("reset_password_token")
+  resetPasswordExpires DateTime? @map("reset_password_expires") @db.Timestamptz(6)
   createdAt       DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   orders          Order[]
   invoices        Invoice[]
+  activityLogs    ActivityLog[]
 
   @@map("users")
+}
+
+model ActivityLog {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String   
+  entity    String   
+  details   String?  
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("activity_logs")
 }

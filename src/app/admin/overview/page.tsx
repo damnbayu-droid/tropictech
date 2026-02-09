@@ -3,6 +3,7 @@ import { StatCards } from "@/components/admin/overview/StatCards"
 import { SystemControl } from "@/components/admin/overview/SystemControl"
 import { OverviewCharts } from "@/components/admin/overview/Charts"
 import { InfoCenter } from "@/components/admin/overview/InfoCenter"
+import { ActivityLogPanel } from "@/components/admin/ActivityLogPanel"
 
 async function getStats() {
     const [
@@ -10,7 +11,9 @@ async function getStats() {
         verifiedUsers,
         totalTransactions,
         revenueData,
-        notifications
+        notifications,
+        totalProducts,
+        totalPackages
     ] = await Promise.all([
         db.user.count(),
         // Use queryRaw for verified count to bypass potential Prisma Client sync issues with Turbopack
@@ -22,7 +25,9 @@ async function getStats() {
         db.systemNotification.findMany({
             orderBy: { createdAt: 'desc' },
             take: 20
-        })
+        }),
+        db.product.count(),
+        db.rentalPackage.count()
     ])
 
     const verifiedCount = Number((verifiedUsers as any)[0]?.count || 0)
@@ -51,7 +56,9 @@ async function getStats() {
             totalUsers,
             verifiedUsers: verifiedCount,
             totalTransactions,
-            totalRevenue: Number(revenueData._sum.total || 0)
+            totalRevenue: Number(revenueData._sum.total || 0),
+            totalProducts,
+            totalPackages
         },
         notifications,
         charts: {
@@ -65,19 +72,24 @@ export default async function AdminOverviewPage() {
     const data = await getStats()
 
     return (
-        <div className="space-y-8 p-1">
+        <div className="space-y-8 pb-10">
             <div className="flex flex-col gap-2">
-                <h1 className="text-4xl font-black tracking-tight uppercase">Admin Dashboard</h1>
-                <p className="text-muted-foreground">Panel Kontrol for all feature of the sites</p>
+                <h1 className="text-4xl font-black tracking-tight uppercase">Dashboard Overview</h1>
+                <p className="text-muted-foreground font-medium italic">Command Center</p>
             </div>
 
-            <StatCards stats={data.cards} />
+            <div className="space-y-8 px-1">
+                <StatCards stats={data.cards} />
 
-            <div className="grid gap-6 lg:grid-cols-2">
-                <OverviewCharts userData={data.charts.users} revenueData={data.charts.revenue} />
-                <div className="space-y-6">
-                    <SystemControl />
-                    <InfoCenter notifications={data.notifications} />
+                <div className="grid gap-8 lg:grid-cols-12">
+                    <div className="lg:col-span-8 space-y-8">
+                        <OverviewCharts userData={data.charts.users} revenueData={data.charts.revenue} />
+                    </div>
+                    <div className="lg:col-span-4 space-y-8">
+                        <SystemControl />
+                        <ActivityLogPanel />
+                        <InfoCenter notifications={data.notifications} />
+                    </div>
                 </div>
             </div>
         </div>

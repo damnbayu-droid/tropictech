@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { createContext, useContext, useState } from 'react'
 import dynamic from 'next/dynamic'
 
 const OrderPopup = dynamic(() => import('@/components/landing/OrderPopup'), {
@@ -15,11 +15,23 @@ interface OrderItem {
     duration?: number
 }
 
+interface OrderContextType {
+    handleProductOrder: (productId: string, duration: number) => void
+    handlePackageOrder: (packageId: string) => void
+}
+
+const OrderContext = createContext<OrderContextType | undefined>(undefined)
+
+export function useOrder() {
+    const context = useContext(OrderContext)
+    if (!context) {
+        throw new Error('useOrder must be used within an OrderProvider')
+    }
+    return context
+}
+
 interface LandingClientProps {
-    children: (props: {
-        handleProductOrder: (productId: string, duration: number) => void
-        handlePackageOrder: (packageId: string) => void
-    }) => React.ReactNode
+    children: React.ReactNode
 }
 
 export default function LandingClient({ children }: LandingClientProps) {
@@ -69,8 +81,8 @@ export default function LandingClient({ children }: LandingClientProps) {
     }
 
     return (
-        <>
-            {children({ handleProductOrder, handlePackageOrder })}
+        <OrderContext.Provider value={{ handleProductOrder, handlePackageOrder }}>
+            {children}
             {isOrderPopupOpen && orderItem && (
                 <OrderPopup
                     isOpen={isOrderPopupOpen}
@@ -78,6 +90,6 @@ export default function LandingClient({ children }: LandingClientProps) {
                     item={orderItem}
                 />
             )}
-        </>
+        </OrderContext.Provider>
     )
 }

@@ -121,7 +121,18 @@ export default function AboutUs() {
           <div className="grid grid-cols-2 gap-4">
             {stats.map((stat, index) => {
               const content = (
-                <Card className="hover:shadow-md transition-all cursor-pointer hover:-translate-y-1 group">
+                <Card
+                  className="hover:shadow-md transition-all cursor-pointer hover:-translate-y-1 group focus-visible:ring-2 focus-visible:ring-primary outline-none"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`View details about ${stat.label}`}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      (document.querySelector(`[data-stat-trigger="${index}"]`) as HTMLElement)?.click();
+                    }
+                  }}
+                >
                   <CardContent className="pt-6 text-center">
                     <div className="flex justify-center mb-3">
                       <div className="p-3 bg-primary/10 rounded-full group-hover:bg-primary/20 transition-colors">
@@ -138,7 +149,7 @@ export default function AboutUs() {
 
               return (
                 <Dialog key={index}>
-                  <DialogTrigger asChild>
+                  <DialogTrigger asChild data-stat-trigger={index}>
                     {content}
                   </DialogTrigger>
                   <DialogContent>

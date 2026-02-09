@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -15,20 +15,36 @@ export function SystemControl() {
         { name: 'Cloudinary API', status: 'connected', icon: Cloud },
     ])
     const [isLoading, setIsLoading] = useState<string | null>(null)
+    const isMounted = useRef(true)
+    const timerRef = useRef<NodeJS.Timeout | null>(null)
+
+    useEffect(() => {
+        isMounted.current = true
+        return () => {
+            isMounted.current = false
+            if (timerRef.current) clearTimeout(timerRef.current)
+        }
+    }, [])
 
     const handleReconnect = (name: string) => {
         setIsLoading(name)
-        setTimeout(() => {
-            setIsLoading(null)
-            toast.success(`${name} reconnected successfully`)
+        if (timerRef.current) clearTimeout(timerRef.current)
+        timerRef.current = setTimeout(() => {
+            if (isMounted.current) {
+                setIsLoading(null)
+                toast.success(`${name} reconnected successfully`)
+            }
         }, 1500)
     }
 
     const handleMasterCheck = () => {
         setIsLoading('master')
-        setTimeout(() => {
-            setIsLoading(null)
-            toast.success("Site health check complete. Everything is running smoothly.")
+        if (timerRef.current) clearTimeout(timerRef.current)
+        timerRef.current = setTimeout(() => {
+            if (isMounted.current) {
+                setIsLoading(null)
+                toast.success("Site health check complete. Everything is running smoothly.")
+            }
         }, 2000)
     }
 

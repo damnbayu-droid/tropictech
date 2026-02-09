@@ -88,7 +88,18 @@ export default function Services() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {services.map((service, index) => {
             const content = (
-              <Card className="text-center hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer group">
+              <Card
+                className="text-center hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer group focus-visible:ring-2 focus-visible:ring-primary outline-none"
+                role="button"
+                tabIndex={0}
+                aria-label={`Learn more about our ${service.title} service`}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    (document.querySelector(`[data-service-trigger="${index}"]`) as HTMLElement)?.click();
+                  }
+                }}
+              >
                 <CardHeader>
                   <div className="flex justify-center mb-4">
                     <div className="p-3 bg-primary/10 rounded-full group-hover:bg-primary/20 transition-colors">
@@ -108,7 +119,7 @@ export default function Services() {
 
             return (
               <Dialog key={index}>
-                <DialogTrigger asChild>
+                <DialogTrigger asChild data-service-trigger={index}>
                   {content}
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[500px]">

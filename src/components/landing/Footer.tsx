@@ -74,19 +74,19 @@ export default function Footer() {
           <div className="space-y-4">
             <h4 className="font-semibold">Credits</h4>
             <div className="text-sm text-muted-foreground space-y-1">
-              <a href="https://indodesign.website" target="_blank" rel="noopener noreferrer" className="hover:text-primary hover:underline transition-colors">
+              <a href="https://indodesign.website" target="_blank" rel="noopener noreferrer" className="hover:text-primary hover:underline transition-colors" aria-label="Visit IndoDesign website">
                 indodesign.website
               </a>
               {' | '}
-              <a href="https://indonesianvisas.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary hover:underline transition-colors">
+              <a href="https://indonesianvisas.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary hover:underline transition-colors" aria-label="Visit Indonesian Visas website">
                 indonesianvisas.com
               </a>
               {' | '}
-              <a href="https://balihelp.id" target="_blank" rel="noopener noreferrer" className="hover:text-primary hover:underline transition-colors">
+              <a href="https://balihelp.id" target="_blank" rel="noopener noreferrer" className="hover:text-primary hover:underline transition-colors" aria-label="Visit Bali Help website">
                 balihelp.id
               </a>
               {' | '}
-              <a href="https://mybisnis.app" target="_blank" rel="noopener noreferrer" className="hover:text-primary hover:underline transition-colors">
+              <a href="https://mybisnis.app" target="_blank" rel="noopener noreferrer" className="hover:text-primary hover:underline transition-colors" aria-label="Visit MyBisnis app website">
                 mybisnis.app
               </a>
             </div>

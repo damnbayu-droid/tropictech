@@ -4,8 +4,8 @@ import { ReportsClient } from "@/components/admin/reports/ReportsClient"
 export default async function AdminReportsPage() {
     const [
         outstandingInvoicesRaw,
-        paidInvoices,
-        allInvoices
+        paidInvoicesRaw,
+        allInvoicesRaw
     ] = await Promise.all([
         db.invoice.findMany({
             where: { status: { in: ['PENDING', 'OVERDUE', 'SENT'] } },
@@ -13,16 +13,31 @@ export default async function AdminReportsPage() {
             orderBy: { createdAt: 'desc' }
         }),
         db.invoice.findMany({
-            where: { status: 'PAID' }
+            where: { status: 'PAID' },
+            orderBy: { createdAt: 'desc' }
         }),
         db.invoice.findMany({
             orderBy: { createdAt: 'asc' }
         })
     ])
 
-    const totalRevenue = paidInvoices.reduce((acc, inv) => acc + Number(inv.total), 0)
+    const paidInvoices = paidInvoicesRaw.map(inv => ({
+        id: inv.id,
+        invoiceNumber: inv.invoiceNumber,
+        total: Number(inv.total),
+        tax: Number(inv.tax),
+        deliveryFee: Number(inv.deliveryFee),
+        subtotal: Number(inv.subtotal),
+        createdAt: inv.createdAt?.toISOString() || new Date().toISOString(),
+        status: inv.status
+    }))
+
+    const totalRevenue = paidInvoices.reduce((acc, inv) => acc + inv.total, 0)
+    const totalTax = paidInvoices.reduce((acc, inv) => acc + inv.tax, 0)
+    const totalDelivery = paidInvoices.reduce((acc, inv) => acc + inv.deliveryFee, 0)
+
     const outstandingTotal = outstandingInvoicesRaw.reduce((acc, inv) => acc + Number(inv.total), 0)
-    const avgOrder = allInvoices.length > 0 ? (totalRevenue + outstandingTotal) / allInvoices.length : 0
+    const avgOrder = allInvoicesRaw.length > 0 ? (totalRevenue + outstandingTotal) / allInvoicesRaw.length : 0
 
     // Mock category data
     const categoryData = [
@@ -62,8 +77,11 @@ export default async function AdminReportsPage() {
                 revenueByMonth={revenueByMonth}
                 categoryData={categoryData}
                 outstandingInvoices={formattedOutstanding}
+                paidInvoices={paidInvoices}
                 financialSummary={{
                     totalRevenue,
+                    totalTax,
+                    totalDelivery,
                     outstanding: outstandingTotal,
                     growth: 12.5,
                     averageOrder: avgOrder

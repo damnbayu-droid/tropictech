@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
     Table,
@@ -17,7 +18,12 @@ import {
     DollarSign,
     PieChart as PieChartIcon,
     ArrowUpRight,
-    ArrowDownRight
+    ArrowDownRight,
+    ChevronDown,
+    FileText,
+    FileSpreadsheet,
+    Percent,
+    Truck
 } from "lucide-react"
 import {
     BarChart,
@@ -29,9 +35,17 @@ import {
     ResponsiveContainer,
     Cell,
     PieChart,
-    Pie
+    Pie,
+    Legend
 } from 'recharts'
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
 
@@ -39,8 +53,11 @@ interface ReportsClientProps {
     revenueByMonth: any[]
     categoryData: any[]
     outstandingInvoices: any[]
+    paidInvoices: any[]
     financialSummary: {
         totalRevenue: number
+        totalTax: number
+        totalDelivery: number
         outstanding: number
         growth: number
         averageOrder: number
@@ -51,165 +68,268 @@ export function ReportsClient({
     revenueByMonth,
     categoryData,
     outstandingInvoices,
+    paidInvoices,
     financialSummary
 }: ReportsClientProps) {
+    const [period, setPeriod] = useState<string>("ALL")
 
-    const handleDownloadReport = () => {
+    const getFilteredData = () => {
+        if (period === "ALL") return paidInvoices
+        const now = new Date()
+        let cutoff = new Date()
+
+        switch (period) {
+            case "MONTH": cutoff.setMonth(now.getMonth() - 1); break
+            case "QUARTER": cutoff.setMonth(now.getMonth() - 3); break
+            case "HALF": cutoff.setMonth(now.getMonth() - 6); break
+            case "YEAR": cutoff.setFullYear(now.getFullYear() - 1); break
+        }
+
+        return paidInvoices.filter(inv => new Date(inv.createdAt) >= cutoff)
+    }
+
+    const filteredInvoices = getFilteredData()
+    const currentRevenue = filteredInvoices.reduce((acc, inv) => acc + inv.total, 0)
+    const currentTax = filteredInvoices.reduce((acc, inv) => acc + inv.tax, 0)
+    const currentDelivery = filteredInvoices.reduce((acc, inv) => acc + inv.deliveryFee, 0)
+
+    const handleDownloadPDF = (type: 'REVENUE' | 'TAX' | 'DELIVERY') => {
         const doc = new jsPDF() as any
-        doc.setFontSize(20)
-        doc.text("Financial Report - Tropic Tech", 20, 20)
-        doc.setFontSize(12)
-        doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, 30)
+        const title = `${type.charAt(0) + type.slice(1).toLowerCase()} Report - ${period}`
+        doc.setFontSize(18)
+        doc.text(title, 20, 20)
+        doc.setFontSize(10)
+        doc.text(`Generated: ${new Date().toLocaleString()}`, 20, 28)
 
-        doc.text("Summary:", 20, 45)
-        doc.text(`Total Revenue: Rp ${financialSummary.totalRevenue.toLocaleString()}`, 25, 55)
-        doc.text(`Outstanding: Rp ${financialSummary.outstanding.toLocaleString()}`, 25, 65)
-        doc.text(`Average Order: Rp ${financialSummary.averageOrder.toLocaleString()}`, 25, 75)
-
-        const tableData = outstandingInvoices.map(inv => [
+        let headers = [['Invoice #', 'Date', 'Amount', 'Status']]
+        let body = filteredInvoices.map(inv => [
             inv.invoiceNumber,
-            inv.customerName,
-            new Date(inv.date).toLocaleDateString(),
+            new Date(inv.createdAt).toLocaleDateString(),
             `Rp ${inv.total.toLocaleString()}`,
             inv.status
         ])
 
+        if (type === 'TAX') {
+            headers = [['Invoice #', 'Date', 'Amount', 'Tax (2%)']]
+            body = filteredInvoices.map(inv => [
+                inv.invoiceNumber,
+                new Date(inv.createdAt).toLocaleDateString(),
+                `Rp ${inv.total.toLocaleString()}`,
+                `Rp ${inv.tax.toLocaleString()}`
+            ])
+            doc.text(`Total Tax: Rp ${currentTax.toLocaleString()}`, 20, 38)
+        } else if (type === 'DELIVERY') {
+            headers = [['Invoice #', 'Date', 'Amount', 'Delivery Fee']]
+            body = filteredInvoices.map(inv => [
+                inv.invoiceNumber,
+                new Date(inv.createdAt).toLocaleDateString(),
+                `Rp ${inv.total.toLocaleString()}`,
+                `Rp ${inv.deliveryFee.toLocaleString()}`
+            ])
+            doc.text(`Total Delivery: Rp ${currentDelivery.toLocaleString()}`, 20, 38)
+        } else {
+            doc.text(`Total Revenue: Rp ${currentRevenue.toLocaleString()}`, 20, 38)
+        }
+
         doc.autoTable({
-            startY: 90,
-            head: [['Invoice #', 'Customer', 'Date', 'Amount', 'Status']],
-            body: tableData,
+            startY: 45,
+            head: headers,
+            body: body,
+            theme: 'striped',
+            headStyles: { fillColor: [15, 23, 42] }
         })
 
-        doc.save(`Financial_Report_${Date.now()}.pdf`)
+        doc.save(`${type}_Report_${period}_${Date.now()}.pdf`)
+    }
+
+    const handleDownloadCSV = (type: 'REVENUE' | 'TAX' | 'DELIVERY') => {
+        let headers = ["Invoice Number", "Date", "Total"]
+        let rows = filteredInvoices.map(inv => [
+            inv.invoiceNumber,
+            new Date(inv.createdAt).toLocaleDateString(),
+            inv.total
+        ])
+
+        if (type === 'TAX') {
+            headers.push("Tax")
+            rows = filteredInvoices.map(inv => [inv.invoiceNumber, new Date(inv.createdAt).toLocaleDateString(), inv.total, inv.tax])
+        } else if (type === 'DELIVERY') {
+            headers.push("Delivery Fee")
+            rows = filteredInvoices.map(inv => [inv.invoiceNumber, new Date(inv.createdAt).toLocaleDateString(), inv.total, inv.deliveryFee])
+        }
+
+        const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n")
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const link = document.createElement("a")
+        const url = URL.createObjectURL(blob)
+        link.setAttribute("href", url)
+        link.setAttribute("download", `${type}_Report_${period}.csv`)
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
     }
 
     const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
 
     return (
         <div className="space-y-8">
-            <div className="flex justify-end">
-                <Button onClick={handleDownloadReport} className="font-bold gap-2">
-                    <Download className="h-4 w-4" /> DOWNLOAD ALL REPORTS (PDF)
-                </Button>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-muted/20 p-4 rounded-2xl border border-dashed">
+                <Tabs value={period} onValueChange={setPeriod} className="w-full md:w-auto">
+                    <TabsList className="bg-background shadow-sm border">
+                        <TabsTrigger value="MONTH" className="text-[10px] font-black uppercase">Month</TabsTrigger>
+                        <TabsTrigger value="QUARTER" className="text-[10px] font-black uppercase">Quarter</TabsTrigger>
+                        <TabsTrigger value="HALF" className="text-[10px] font-black uppercase">Half Year</TabsTrigger>
+                        <TabsTrigger value="YEAR" className="text-[10px] font-black uppercase">One Year</TabsTrigger>
+                        <TabsTrigger value="ALL" className="text-[10px] font-black uppercase">All Time</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+
+                <div className="flex gap-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="default" className="font-black text-xs gap-2">
+                                <Download className="h-4 w-4" /> EXPORT REPORTS <ChevronDown className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuItem onClick={() => handleDownloadPDF('REVENUE')} className="gap-2 font-bold py-3">
+                                <FileText className="h-4 w-4 text-blue-600" /> Revenue (PDF)
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownloadCSV('REVENUE')} className="gap-2 font-bold py-3 border-b">
+                                <FileSpreadsheet className="h-4 w-4 text-green-600" /> Revenue (CSV)
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownloadPDF('TAX')} className="gap-2 font-bold py-3">
+                                <Percent className="h-4 w-4 text-orange-600" /> Tax report (PDF)
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownloadPDF('DELIVERY')} className="gap-2 font-bold py-3 border-t">
+                                <Truck className="h-4 w-4 text-purple-600" /> Delivery costs (PDF)
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="bg-primary/5 border-primary/20">
+                <Card className="bg-primary/5 border-primary/20 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+                        <TrendingUp className="h-12 w-12" />
+                    </div>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Total Revenue</CardTitle>
+                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Period Revenue</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-black">Rp {financialSummary.totalRevenue.toLocaleString('id-ID')}</div>
-                        <div className="flex items-center text-xs text-green-600 mt-1 font-bold">
-                            <ArrowUpRight className="h-3 w-3 mr-1" /> {financialSummary.growth}% Since last month
+                        <div className="text-2xl font-black">Rp {currentRevenue.toLocaleString('id-ID')}</div>
+                        <div className="text-[10px] text-muted-foreground mt-1 uppercase font-bold">{period} PERFORMANCE</div>
+                    </CardContent>
+                </Card>
+                <Card className="border-orange-500/20 bg-orange-500/5">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-orange-600/70">WHT Tax (2%)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-black text-orange-600">Rp {currentTax.toLocaleString('id-ID')}</div>
+                        <div className="flex items-center text-[10px] text-orange-600/70 mt-1 font-bold uppercase underline" onClick={() => handleDownloadPDF('TAX')} style={{ cursor: 'pointer' }}>
+                            <Download className="h-3 w-3 mr-1" /> Get Tax Clearance
                         </div>
+                    </CardContent>
+                </Card>
+                <Card className="border-purple-500/20 bg-purple-500/5">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-purple-600/70">Delivery Costs</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-black text-purple-600">Rp {currentDelivery.toLocaleString('id-ID')}</div>
+                        <div className="text-[10px] text-purple-600/70 mt-1 font-bold uppercase">LOGISTICS EXPENSE</div>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Outstanding</CardTitle>
+                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Outstanding</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-black text-orange-600">Rp {financialSummary.outstanding.toLocaleString('id-ID')}</div>
-                        <div className="flex items-center text-xs text-muted-foreground mt-1">
-                            <Calendar className="h-3 w-3 mr-1" /> Accounts Receivable
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Avg. Transaction</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-black">Rp {financialSummary.averageOrder.toLocaleString('id-ID')}</div>
-                        <div className="flex items-center text-xs text-blue-600 mt-1 font-bold">
-                            <TrendingUp className="h-3 w-3 mr-1" /> Stable performance
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Active Rentals</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-black">{outstandingInvoices.length}</div>
-                        <div className="flex items-center text-xs text-muted-foreground mt-1">
-                            <DollarSign className="h-3 w-3 mr-1" /> Pending settlement
-                        </div>
+                        <div className="text-2xl font-black">Rp {financialSummary.outstanding.toLocaleString('id-ID')}</div>
+                        <div className="text-[10px] text-muted-foreground mt-1 font-bold uppercase">REVENUE AT RISK</div>
                     </CardContent>
                 </Card>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-7">
-                <Card className="col-span-4">
+                <Card className="col-span-4 bg-card/50 backdrop-blur-sm border-none shadow-sm">
                     <CardHeader>
-                        <CardTitle className="text-lg">Revenue Growth (Monthly)</CardTitle>
+                        <CardTitle className="text-lg font-black uppercase tracking-tight">Revenue Analysis</CardTitle>
                     </CardHeader>
-                    <CardContent className="h-[300px]">
+                    <CardContent className="h-[350px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={revenueByMonth}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="name" />
-                                <YAxis tickFormatter={(val) => `Rp${val / 1000000}M`} />
-                                <Tooltip formatter={(val: any) => `Rp ${val.toLocaleString()}`} />
-                                <Bar dataKey="total" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} className="text-[10px] font-bold" />
+                                <YAxis tickFormatter={(val) => `Rp${val / 1000000}M`} axisLine={false} tickLine={false} className="text-[10px] font-bold" />
+                                <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} formatter={(val: any) => `Rp ${val.toLocaleString()}`} />
+                                <Bar dataKey="total" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>
 
-                <Card className="col-span-3">
+                <Card className="col-span-3 bg-card/50 backdrop-blur-sm border-none shadow-sm">
                     <CardHeader>
-                        <CardTitle className="text-lg">Revenue by Category</CardTitle>
+                        <CardTitle className="text-lg font-black uppercase tracking-tight">Market Split</CardTitle>
                     </CardHeader>
-                    <CardContent className="h-[300px]">
+                    <CardContent className="h-[350px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
                                     data={categoryData}
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={5}
+                                    innerRadius={70}
+                                    outerRadius={100}
+                                    paddingAngle={8}
                                     dataKey="value"
+                                    stroke="none"
                                 >
                                     {categoryData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip />
-                                <Legend />
+                                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none' }} />
+                                <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" className="text-xs font-bold uppercase" />
                             </PieChart>
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-lg">Aging Report (Outstanding Invoices)</CardTitle>
+            <Card className="border-none shadow-md overflow-hidden bg-card/50 backdrop-blur-sm">
+                <CardHeader className="bg-muted/30 border-b">
+                    <div className="flex justify-between items-center">
+                        <CardTitle className="text-lg font-black uppercase tracking-tight">Detailed Transactions Log</CardTitle>
+                        <span className="text-xs font-bold bg-muted p-1 px-3 rounded-full">{filteredInvoices.length} Entries</span>
+                    </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                     <Table>
-                        <TableHeader className="bg-muted/50">
+                        <TableHeader className="bg-muted/10">
                             <TableRow>
-                                <TableHead>Invoice #</TableHead>
-                                <TableHead>Customer</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Amount</TableHead>
-                                <TableHead>Status</TableHead>
+                                <TableHead className="text-[10px] uppercase font-black px-6">Invoice #</TableHead>
+                                <TableHead className="text-[10px] uppercase font-black">Date</TableHead>
+                                <TableHead className="text-[10px] uppercase font-black text-right">Revenue</TableHead>
+                                <TableHead className="text-[10px] uppercase font-black text-right">Tax</TableHead>
+                                <TableHead className="text-[10px] uppercase font-black text-right">Logistics</TableHead>
+                                <TableHead className="text-[10px] uppercase font-black px-6 text-center">Status</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {outstandingInvoices.map((inv) => (
-                                <TableRow key={inv.id}>
-                                    <TableCell className="font-mono font-bold">{inv.invoiceNumber}</TableCell>
-                                    <TableCell>{inv.customerName}</TableCell>
-                                    <TableCell>{new Date(inv.date).toLocaleDateString()}</TableCell>
-                                    <TableCell className="font-bold">Rp {inv.total.toLocaleString('id-ID')}</TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50">
+                            {filteredInvoices.map((inv) => (
+                                <TableRow key={inv.id} className="hover:bg-muted/10 transition-colors">
+                                    <TableCell className="font-mono font-bold px-6 py-4">{inv.invoiceNumber}</TableCell>
+                                    <TableCell className="text-sm font-medium">{new Date(inv.createdAt).toLocaleDateString()}</TableCell>
+                                    <TableCell className="text-right font-black">Rp {inv.total.toLocaleString('id-ID')}</TableCell>
+                                    <TableCell className="text-right text-orange-600 font-bold">Rp {inv.tax.toLocaleString('id-ID')}</TableCell>
+                                    <TableCell className="text-right text-purple-600 font-bold">Rp {inv.deliveryFee.toLocaleString('id-ID')}</TableCell>
+                                    <TableCell className="px-6 text-center">
+                                        <Badge variant="outline" className="text-[10px] font-black border-green-500/30 text-green-600 bg-green-500/5">
                                             {inv.status}
                                         </Badge>
                                     </TableCell>
@@ -222,5 +342,3 @@ export function ReportsClient({
         </div>
     )
 }
-
-import { Legend } from "recharts"
