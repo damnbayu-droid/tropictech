@@ -9,34 +9,45 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import {
   Calendar,
   MapPin,
   CheckCircle,
-  Camera,
-  Package,
-  FileText,
-  TrendingUp,
   Clock,
-  CheckCircle2,
   AlertCircle,
   Home,
   LogOut,
-  ChevronRight,
-  Plus
+  Bell,
+  Package,
+  TrendingUp,
+  ClipboardCheck
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { RealtimePoller } from '@/lib/realtime'
 
 export default function WorkerDashboard() {
   const { user, isLoading, isAuthenticated, logout } = useAuth()
   const router = useRouter()
-  const [assignedOrders, setAssignedOrders] = useState<any[]>([])
-  const [selectedOrder, setSelectedOrder] = useState<any>(null)
-  const [deliveryPhotos, setDeliveryPhotos] = useState<File[]>([])
-  const [stockUpdates, setStockUpdates] = useState<Record<string, number>>({})
+
+  // State for schedules/jobs
+  const [schedules, setSchedules] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // State for attendance
+  const [todayAttendance, setTodayAttendance] = useState<any>(null)
+  const [attendanceHistory, setAttendanceHistory] = useState<any[]>([])
+
+  // State for notifications
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  // State for dialogs
+  const [showAttendanceDialog, setShowAttendanceDialog] = useState(false)
+  const [showNotificationsDialog, setShowNotificationsDialog] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -46,87 +57,124 @@ export default function WorkerDashboard() {
 
   useEffect(() => {
     if (user) {
-      fetchAssignedOrders()
+      fetchData()
+
+      // Set up real-time polling every 15 seconds
+      const poller = new RealtimePoller({
+        interval: 15000,
+        onUpdate: (data) => {
+          if (data.schedules) setSchedules(data.schedules.schedules)
+          if (data.notifications) {
+            setNotifications(data.notifications.notifications)
+            setUnreadCount(data.notifications.unreadCount)
+          }
+        }
+      })
+
+      const token = localStorage.getItem('token')
+      if (token) {
+        poller.pollWorkerData(token)
+      }
+
+      return () => poller.stop()
     }
   }, [user])
 
-  const fetchAssignedOrders = async () => {
+  const fetchData = async () => {
+    const token = localStorage.getItem('token')
+    if (!token) return
+
     try {
-      const token = localStorage.getItem('token')
-      const response = await fetch('/api/orders/worker-orders', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setAssignedOrders(data.orders)
+      // Fetch all data in parallel
+      const [schedulesRes, attendanceRes, notificationsRes] = await Promise.all([
+        fetch('/api/worker/schedules', { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch('/api/worker/attendance', { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch('/api/worker/notifications', { headers: { 'Authorization': `Bearer ${token}` } })
+      ])
+
+      if (schedulesRes.ok) {
+        const data = await schedulesRes.json()
+        setSchedules(data.schedules)
+      }
+
+      if (attendanceRes.ok) {
+        const data = await schedulesRes.json()
+        setAttendanceHistory(data.attendance || [])
+
+        // Check if checked in today
+        const today = new Date().toISOString().split('T')[0]
+        const todayRecord = data.attendance?.find((a: any) =>
+          a.date.split('T')[0] === today
+        )
+        setTodayAttendance(todayRecord)
+      }
+
+      if (notificationsRes.ok) {
+        const data = await notificationsRes.json()
+        setNotifications(data.notifications || [])
+        setUnreadCount(data.unreadCount || 0)
       }
     } catch (error) {
-      console.error('Failed to fetch orders:', error)
+      console.error('Failed to fetch worker data:', error)
+      toast.error('Failed to load dashboard data')
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleConfirmDelivery = async () => {
-    if (!selectedOrder) return
-
+  const handleCheckInOut = async () => {
     try {
       const token = localStorage.getItem('token')
-      const formData = new FormData()
-      formData.append('orderId', selectedOrder.id)
-      formData.append('confirmed', 'true')
-      deliveryPhotos.forEach((photo) => {
-        formData.append('photos', photo)
-      })
-
-      const response = await fetch('/api/orders/confirm-delivery', {
+      const res = await fetch('/api/worker/attendance', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
-        body: formData,
+        body: JSON.stringify({ notes: '' })
       })
 
-      if (response.ok) {
-        toast.success('Delivery confirmed successfully')
-        setSelectedOrder(null)
-        setDeliveryPhotos([])
-        fetchAssignedOrders()
+      if (res.ok) {
+        const data = await res.json()
+        if (data.action === 'checkin') {
+          toast.success('Checked in successfully!')
+        } else {
+          toast.success('Checked out successfully!')
+        }
+        setTodayAttendance(data.attendance)
+        fetchData()
       } else {
-        toast.error('Failed to confirm delivery')
+        toast.error('Failed to record attendance')
       }
     } catch (error) {
-      toast.error('Failed to confirm delivery')
+      toast.error('Failed to record attendance')
     }
   }
 
-  const handleUpdateStock = async (productId: string) => {
-    const quantity = stockUpdates[productId]
-    if (!quantity) return
-
+  const updateJobStatus = async (scheduleId: string, status: string, notes?: string) => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch(`/api/products/${productId}/stock`, {
-        method: 'POST',
+      const res = await fetch(`/api/worker/schedules/${scheduleId}`, {
+        method: 'PATCH',
         headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ quantity }),
+        body: JSON.stringify({ status, workerNotes: notes })
       })
 
-      if (response.ok) {
-        toast.success('Stock updated successfully')
-        setStockUpdates({ ...stockUpdates, [productId]: 0 })
+      if (res.ok) {
+        toast.success(`Job status updated to ${status}`)
+        fetchData()
       } else {
-        toast.error('Failed to update stock')
+        toast.error('Failed to update job status')
       }
     } catch (error) {
-      toast.error('Failed to update stock')
+      toast.error('Failed to update job status')
     }
   }
 
-  if (isLoading) {
+  if (isLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -138,287 +186,256 @@ export default function WorkerDashboard() {
     return null
   }
 
+  // Calculate stats
+  const pendingJobs = schedules.filter(s => s.status === 'PENDING').length
+  const ongoingJobs = schedules.filter(s => s.status === 'ONGOING').length
+  const completedJobs = schedules.filter(s => s.status === 'FINISHED').length
+  const attendanceRate = attendanceHistory.length > 0
+    ? Math.round((attendanceHistory.filter(a => a.status === 'PRESENT' || a.status === 'LATE').length / attendanceHistory.length) * 100)
+    : 0
+
   return (
-    <div className="min-h-screen flex flex-col bg-background selection:bg-primary/20">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
-      <main className="flex-1 py-12 px-4 mt-16 pb-20">
-        <div className="container mx-auto">
-          {/* Dashboard Header */}
-          <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <div className="h-1 bg-primary w-12 rounded-full" />
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-primary">Operational Hub</span>
-              </div>
-              <h1 className="text-5xl md:text-6xl font-black tracking-tighter uppercase leading-none">
-                WORKER <span className="text-primary">DASHBOARD</span>
-              </h1>
-              <div className="flex items-center gap-3 text-muted-foreground font-bold text-sm">
-                <Badge variant="outline" className="rounded-full px-4 border-primary/20 bg-primary/5 text-primary text-[10px] font-black">ACTIVE SESSION</Badge>
-                <span>•</span>
-                <span className="tracking-tight italic">{user?.fullName || 'Operational Staff'}</span>
-              </div>
+      <main className="flex-1 py-8 px-4 mt-16">
+        <div className="container mx-auto max-w-7xl">
+          {/* Header */}
+          <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-4xl font-bold text-primary mb-2">Worker Dashboard</h1>
+              <p className="text-muted-foreground">Welcome back, {user?.fullName}</p>
             </div>
-
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" className="rounded-full font-black text-xs tracking-widest gap-2 hover:bg-primary/5" onClick={() => router.push('/')}>
-                <Home className="h-4 w-4" /> BACK TO HOME
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => setShowNotificationsDialog(true)}
+              >
+                <Bell className="w-4 h-4" />
+                Notifications
+                {unreadCount > 0 && (
+                  <Badge className="ml-1">{unreadCount}</Badge>
+                )}
               </Button>
-              <Button variant="ghost" size="icon" className="rounded-full text-destructive hover:bg-destructive/10" onClick={() => logout()}>
-                <LogOut className="h-5 w-5" />
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => router.push('/')}
+              >
+                <Home className="w-4 h-4" />
+                Home
+              </Button>
+              <Button variant="outline" onClick={logout} className="gap-2">
+                <LogOut className="w-4 h-4" />
+                Log Out
               </Button>
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-12 gap-8">
-            {/* Left Column: Stats & Schedule */}
-            <div className="lg:col-span-8 space-y-8">
-              {/* Worker Stats Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <Card className="border-none shadow-sm bg-zinc-900 text-white overflow-hidden group">
-                  <CardContent className="p-6 relative">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-                      <CheckCircle2 className="h-16 w-16" />
-                    </div>
-                    <div className="space-y-1 relative z-10">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Completed Jobs</p>
-                      <p className="text-4xl font-black">24</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-none shadow-sm bg-primary/10 overflow-hidden">
-                  <CardContent className="p-6">
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Pending Tasks</p>
-                      <p className="text-4xl font-black text-primary">{assignedOrders.length}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-none shadow-sm bg-muted/30 overflow-hidden">
-                  <CardContent className="p-6">
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Reports</p>
-                      <p className="text-4xl font-black">12</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Job Schedule List */}
-              <Card className="border-none shadow-xl overflow-hidden rounded-3xl">
-                <CardHeader className="bg-zinc-900 text-white py-6">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg font-black tracking-widest flex items-center gap-3">
-                      <Calendar className="h-5 w-5 text-primary" />
-                      UPCOMING JOB SCHEDULE
-                    </CardTitle>
-                    <Badge className="bg-primary text-primary-foreground font-black px-4">{assignedOrders.length} TASKS</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="divide-y divide-border/50">
-                    {assignedOrders.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-24 text-muted-foreground bg-muted/5">
-                        <Calendar className="h-16 w-16 opacity-10 mb-4" />
-                        <p className="font-black text-xl uppercase tracking-tighter">No jobs assigned</p>
-                        <p className="text-sm">Enjoy your break or check back later.</p>
-                      </div>
-                    ) : (
-                      assignedOrders.map((order) => (
-                        <div
-                          key={order.id}
-                          className={cn(
-                            "group p-8 hover:bg-muted/30 transition-all cursor-pointer relative",
-                            selectedOrder?.id === order.id && "bg-primary/5"
-                          )}
-                          onClick={() => setSelectedOrder(order)}
-                        >
-                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-3">
-                                <span className="font-black text-2xl tracking-tighter">{order.orderNumber}</span>
-                                {order.deliveryConfirmed ? (
-                                  <Badge className="bg-green-500/10 text-green-600 border-green-500/20 rounded-full font-black text-[10px] px-3">DELIVERED</Badge>
-                                ) : (
-                                  <Badge className="bg-primary/10 text-primary border-primary/20 rounded-full font-black text-[10px] px-3">PENDING</Badge>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground font-medium">
-                                <div className="flex items-center gap-2">
-                                  <Clock className="h-4 w-4 text-primary" />
-                                  {new Date(order.startDate).toLocaleDateString()}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <MapPin className="h-4 w-4 text-primary" />
-                                  {order.deliveryAddress || 'Area: Bali Region'}
-                                </div>
-                              </div>
-                            </div>
-                            <Button variant={selectedOrder?.id === order.id ? "default" : "secondary"} className="rounded-xl font-black px-8 py-6 h-auto tracking-widest text-xs">
-                              {selectedOrder?.id === order.id ? 'MANAGING...' : 'VIEW TASK'}
-                            </Button>
-                          </div>
-                          {selectedOrder?.id === order.id && (
-                            <div className="absolute left-0 top-0 bottom-0 w-2 bg-primary" />
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Performance Indicator */}
-              <Card className="border-none shadow-sm h-[320px] flex items-center justify-center bg-zinc-900 text-white relative overflow-hidden rounded-3xl group">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(255,165,0,0.05)_100%)]" />
-                <div className="z-10 text-center space-y-6 max-w-md px-8">
-                  <div className="h-20 w-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto ring-8 ring-primary/5 group-hover:scale-110 transition-transform duration-500">
-                    <TrendingUp className="h-10 w-10 text-primary" />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="font-black text-2xl tracking-tighter leading-tight uppercase">OPERATIONAL PERFORMANCE</p>
-                    <p className="text-sm text-zinc-400 font-medium">
-                      Your efficiency metrics and delivery completion analytics are synchronized in real-time with central HQ.
-                    </p>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <Clock className="w-8 h-8 text-orange-600" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Pending Jobs</p>
+                    <p className="text-2xl font-bold">{pendingJobs}</p>
                   </div>
                 </div>
-              </Card>
-            </div>
+              </CardContent>
+            </Card>
 
-            {/* Right Column: Execution & Inventory */}
-            <div className="lg:col-span-4 space-y-8">
-              {/* Active Task Section */}
-              {selectedOrder ? (
-                <Card className="border-none shadow-2xl overflow-hidden rounded-3xl ring-4 ring-primary/5">
-                  <CardHeader className="bg-primary text-primary-foreground py-6">
-                    <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                      <CheckCircle className="h-5 w-5" />
-                      TASK EXECUTION: {selectedOrder.orderNumber}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-8 space-y-8">
-                    <div className="space-y-6">
-                      <div className="p-5 bg-muted/50 rounded-2xl space-y-2 border">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Target Location</p>
-                        <p className="font-bold text-base leading-tight italic">"{selectedOrder.deliveryAddress || 'Check dispatch notes'}"</p>
-                      </div>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <AlertCircle className="w-8 h-8 text-blue-600" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Ongoing</p>
+                    <p className="text-2xl font-bold">{ongoingJobs}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-                      <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Inventory Checklist</Label>
-                        <div className="space-y-3">
-                          {selectedOrder.rentalItems?.map((item: any) => (
-                            <div key={item.id} className="flex items-center gap-4 p-4 bg-background border rounded-2xl hover:border-primary/40 transition-all group">
-                              <Checkbox id={`item-${item.id}`} disabled={selectedOrder.deliveryConfirmed} className="rounded-md h-6 w-6 border-2" />
-                              <Label htmlFor={`item-${item.id}`} className="flex-1 text-sm font-black cursor-pointer group-hover:text-primary transition-colors">
-                                {item.name || 'Equipment Unit'} <span className="text-primary ml-2 uppercase opacity-50">x{item.quantity}</span>
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <CheckCircle className="w-8 h-8 text-green-600" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Completed</p>
+                    <p className="text-2xl font-bold">{completedJobs}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-                      <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Digital Evidence</Label>
-                        <div className="grid grid-cols-2 gap-3">
-                          {deliveryPhotos.length > 0 && Array.from(deliveryPhotos).map((photo, i) => (
-                            <div key={i} className="aspect-square bg-muted rounded-2xl overflow-hidden border-2 border-primary/10 shadow-inner">
-                              <img src={URL.createObjectURL(photo)} alt="Preview" className="object-cover w-full h-full" />
-                            </div>
-                          ))}
-                        </div>
-                        <div className="relative">
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            className="hidden"
-                            id="photo-upload"
-                            onChange={(e) => setDeliveryPhotos(Array.from(e.target.files || []))}
-                            disabled={selectedOrder.deliveryConfirmed}
-                          />
-                          <Label htmlFor="photo-upload" className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-3xl cursor-pointer hover:bg-primary/5 hover:border-primary/40 transition-all gap-3 bg-muted/10">
-                            <div className="p-3 bg-background rounded-full shadow-sm">
-                              <Camera className="h-6 w-6 text-primary" />
-                            </div>
-                            <span className="text-xs font-black uppercase tracking-widest">Upload Capture</span>
-                          </Label>
-                        </div>
-                      </div>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <TrendingUp className="w-8 h-8 text-primary" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Attendance</p>
+                    <p className="text-2xl font-bold">{attendanceRate}%</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Attendance Check-in */}
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ClipboardCheck className="w-5 h-5" />
+                Daily Attendance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {todayAttendance ? (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Today's Status</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant={todayAttendance.status === 'PRESENT' ? 'default' : 'secondary'}>
+                        {todayAttendance.status}
+                      </Badge>
+                      <span className="text-sm">
+                        Check-in: {todayAttendance.checkInTime ? new Date(todayAttendance.checkInTime).toLocaleTimeString() : 'N/A'}
+                      </span>
+                      {todayAttendance.checkOutTime && (
+                        <span className="text-sm">
+                          | Check-out: {new Date(todayAttendance.checkOutTime).toLocaleTimeString()}
+                        </span>
+                      )}
                     </div>
-
-                    <div className="space-y-3 pt-4">
-                      <Button
-                        onClick={handleConfirmDelivery}
-                        disabled={selectedOrder.deliveryConfirmed || deliveryPhotos.length === 0}
-                        className="w-full h-16 rounded-2xl font-black text-lg gap-3 shadow-xl shadow-primary/20"
-                      >
-                        {selectedOrder.deliveryConfirmed ? <CheckCircle2 className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
-                        {selectedOrder.deliveryConfirmed ? 'MISSION COMPLETED' : 'FINALIZE DELIVERY'}
-                      </Button>
-                      <Button variant="ghost" onClick={() => setSelectedOrder(null)} className="w-full font-black text-xs tracking-widest bg-muted/20 hover:bg-muted/40 rounded-xl h-12 uppercase">
-                        CLOSE TASK
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                  {!todayAttendance.checkOutTime && (
+                    <Button onClick={handleCheckInOut}>
+                      Check Out
+                    </Button>
+                  )}
+                </div>
               ) : (
-                <div className="h-72 border-2 border-dashed rounded-[2.5rem] flex flex-col items-center justify-center text-muted-foreground p-10 text-center gap-6 bg-muted/5">
-                  <div className="p-5 bg-background rounded-full shadow-sm ring-8 ring-muted/10">
-                    <AlertCircle className="h-8 w-8 opacity-20" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-lg font-black uppercase tracking-tighter">Duty Standing By</p>
-                    <p className="text-sm font-medium">Select a job from the schedule <br />to begin execution reporting.</p>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-muted-foreground">You haven't checked in today</p>
+                  <Button onClick={handleCheckInOut}>
+                    Check In Now
+                  </Button>
                 </div>
               )}
+            </CardContent>
+          </Card>
 
-              {/* Stock Inventory Quick Actions */}
-              <Card className="border-none shadow-lg overflow-hidden bg-zinc-950 text-white rounded-3xl">
-                <CardHeader className="bg-white/5 border-b border-white/10 py-6">
-                  <CardTitle className="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3 text-primary">
-                    <Package className="h-4 w-4" /> INVENTORY RE-SYNC
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-8 space-y-6">
-                  {[
-                    { id: 'standing-desk', name: 'STANDING DESKS', count: 12 },
-                    { id: 'monitor', name: 'ULTRAWIDE MONITORS', count: 8 },
-                    { id: 'chair', name: 'ERGONOMIC CHAIRS', count: 15 }
-                  ].map(item => (
-                    <div key={item.id} className="space-y-3">
-                      <div className="flex justify-between items-end px-1">
-                        <span className="text-[10px] font-black text-zinc-500 tracking-widest leading-none">{item.name}</span>
-                        <span className="text-xs font-black text-primary leading-none">LIVE: {item.count}</span>
-                      </div>
-                      <div className="flex gap-3">
-                        <Input
-                          type="number"
-                          placeholder="Adjustment..."
-                          className="bg-white/5 border-white/10 h-12 rounded-xl font-black placeholder:text-zinc-700 text-center"
-                          onChange={(e) =>
-                            setStockUpdates({ ...stockUpdates, [item.id]: parseInt(e.target.value) || 0 })
-                          }
-                        />
-                        <Button
-                          onClick={() => handleUpdateStock(item.id)}
-                          size="sm"
-                          className="bg-white text-black hover:bg-primary hover:text-white font-black rounded-xl h-12 px-6 transition-all"
-                        >
-                          SYNC
-                        </Button>
-                      </div>
-                    </div>
+          {/* Job Schedules */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                Job Schedules
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {schedules.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No jobs assigned yet</p>
+              ) : (
+                <div className="space-y-4">
+                  {schedules.map((schedule) => (
+                    <Card key={schedule.id} className="border-l-4 border-l-primary">
+                      <CardContent className="pt-6">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h3 className="font-bold text-lg">{schedule.order?.orderNumber}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Customer: {schedule.order?.user?.fullName}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              <Calendar className="w-3 h-3 inline mr-1" />
+                              Scheduled: {new Date(schedule.scheduledDate).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <Badge variant={
+                            schedule.status === 'FINISHED' ? 'default' :
+                              schedule.status === 'ONGOING' ? 'secondary' :
+                                'outline'
+                          }>
+                            {schedule.status}
+                          </Badge>
+                        </div>
+
+                        {schedule.notes && (
+                          <div className="bg-muted p-3 rounded-md mb-4">
+                            <p className="text-sm font-medium">Admin Notes:</p>
+                            <p className="text-sm">{schedule.notes}</p>
+                          </div>
+                        )}
+
+                        {schedule.status !== 'FINISHED' && schedule.status !== 'CANCELLED' && (
+                          <div className="flex gap-2 flex-wrap">
+                            {schedule.status === 'PENDING' && (
+                              <Button size="sm" onClick={() => updateJobStatus(schedule.id, 'ONGOING')}>
+                                Start Job
+                              </Button>
+                            )}
+                            {schedule.status === 'ONGOING' && (
+                              <>
+                                <Button size="sm" variant="default" onClick={() => updateJobStatus(schedule.id, 'FINISHED')}>
+                                  Mark Finished
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => updateJobStatus(schedule.id, 'DELAYED')}>
+                                  Mark Delayed
+                                </Button>
+                              </>
+                            )}
+                            {(schedule.status === 'PENDING' || schedule.status === 'ONGOING') && (
+                              <Button size="sm" variant="destructive" onClick={() => updateJobStatus(schedule.id, 'CANCELLED')}>
+                                Cancel
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
                   ))}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </main>
+
+      {/* Notifications Dialog */}
+      <Dialog open={showNotificationsDialog} onOpenChange={setShowNotificationsDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Notifications</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {notifications.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No notifications</p>
+            ) : (
+              notifications.map((notif) => (
+                <Card key={notif.id} className={cn(!notif.isRead && 'border-primary')}>
+                  <CardContent className="pt-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold">{notif.title}</h4>
+                        <p className="text-sm text-muted-foreground mt-1">{notif.message}</p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {new Date(notif.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                      {!notif.isRead && <Badge>New</Badge>}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Footer />
     </div>
   )

@@ -64,6 +64,11 @@ const items = [
         icon: ShoppingCart,
     },
     {
+        title: "Workers Panel",
+        url: "/admin/workers",
+        icon: Users,
+    },
+    {
         title: "Invoices",
         url: "/admin/invoices",
         icon: FileText,
@@ -130,6 +135,20 @@ export function AdminSidebar() {
             </SidebarContent>
             <SidebarFooter>
                 <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild tooltip="Log Out">
+                            <button
+                                onClick={() => {
+                                    localStorage.removeItem('token')
+                                    window.location.href = '/auth/login'
+                                }}
+                                className="flex items-center gap-2 w-full"
+                            >
+                                <LogOut className="text-destructive" />
+                                <span className="font-semibold text-destructive">LOG OUT</span>
+                            </button>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <div className="flex items-center gap-2">
